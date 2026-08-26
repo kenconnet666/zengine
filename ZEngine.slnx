@@ -13,6 +13,8 @@
     <Project Path="src/Ecs/ZEngine.Ecs/ZEngine.Ecs.csproj" />
     <Project Path="src/Jobs/ZEngine.Jobs/ZEngine.Jobs.csproj" />
     <Project Path="src/Generators/ZEngine.Ecs.Generators/ZEngine.Ecs.Generators.csproj" />
+    <Project Path="src/Plugins/ZEngine.Plugins.Abstractions/ZEngine.Plugins.Abstractions.csproj" />
+    <Project Path="src/Plugins/ZEngine.Plugins.Runtime/ZEngine.Plugins.Runtime.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/HelloZEngine/HelloZEngine.csproj" />
@@ -25,5 +27,10 @@
     <Project Path="tests/ZEngine.Ecs.Tests/ZEngine.Ecs.Tests.csproj" />
     <Project Path="tests/ZEngine.Jobs.Tests/ZEngine.Jobs.Tests.csproj" />
     <Project Path="tests/ZEngine.Ecs.Generators.Tests/ZEngine.Ecs.Generators.Tests.csproj" />
+    <Project Path="tests/ZEngine.Plugins.Tests/ZEngine.Plugins.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/fixtures/">
+    <Project Path="tests/Fixtures/ZEngine.CounterPlugin.Contracts/ZEngine.CounterPlugin.Contracts.csproj" />
+    <Project Path="tests/Fixtures/ZEngine.CounterPlugin.Runtime/ZEngine.CounterPlugin.Runtime.csproj" />
   </Folder>
 </Solution>

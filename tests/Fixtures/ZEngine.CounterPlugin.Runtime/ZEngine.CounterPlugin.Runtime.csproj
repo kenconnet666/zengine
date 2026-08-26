@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZEngine.CounterPlugin.Runtime</RootNamespace>
+    <AssemblyName>ZEngine.CounterPlugin.Runtime</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ZEngine.CounterPlugin.Contracts\ZEngine.CounterPlugin.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\src\Plugins\ZEngine.Plugins.Abstractions\ZEngine.Plugins.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

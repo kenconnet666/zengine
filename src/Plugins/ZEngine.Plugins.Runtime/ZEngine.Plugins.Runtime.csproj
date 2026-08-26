@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZEngine.Plugins.Runtime</RootNamespace>
+    <AssemblyName>ZEngine.Plugins.Runtime</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ZEngine.Plugins.Abstractions\ZEngine.Plugins.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

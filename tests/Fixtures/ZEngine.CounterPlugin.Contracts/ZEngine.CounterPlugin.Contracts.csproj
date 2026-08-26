@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZEngine.CounterPlugin.Contracts</RootNamespace>
+    <AssemblyName>ZEngine.CounterPlugin.Contracts</AssemblyName>
+  </PropertyGroup>
+</Project>

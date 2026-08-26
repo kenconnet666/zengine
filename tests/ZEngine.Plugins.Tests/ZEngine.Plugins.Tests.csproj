@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>ZEngine.Plugins.Tests</RootNamespace>
+    <AssemblyName>ZEngine.Plugins.Tests</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Plugins\ZEngine.Plugins.Runtime\ZEngine.Plugins.Runtime.csproj" />
+    <ProjectReference Include="..\Fixtures\ZEngine.CounterPlugin.Contracts\ZEngine.CounterPlugin.Contracts.csproj" />
+    <ProjectReference Include="..\Fixtures\ZEngine.CounterPlugin.Runtime\ZEngine.CounterPlugin.Runtime.csproj"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+</Project>
