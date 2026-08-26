@@ -112,4 +112,33 @@ public sealed class VulkanApiVersionTests
             message =>
                 (message.Severity & VkDebugUtilsMessageSeverityFlagsExt.Error) != 0);
     }
+
+    [Fact]
+    public void CreatesSignalsAndWaitsTimelineSemaphore()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        using VulkanLoader loader = VulkanLoader.OpenSystem();
+        using VulkanInstance instance = VulkanInstance.Create(
+            loader,
+            VulkanInstanceOptions.Validation);
+        VulkanPhysicalDeviceInfo physicalDevice =
+            Assert.Single(instance.EnumeratePhysicalDevices());
+        using VulkanDevice device = instance.CreateGraphicsDevice(physicalDevice);
+        using VulkanTimeline timeline = device.CreateTimeline();
+
+        Assert.Equal(0ul, timeline.CompletedValue);
+        ulong signalValue = timeline.ReserveSignalValue();
+        timeline.Signal(signalValue);
+
+        Assert.True(timeline.Wait(signalValue, 1_000_000_000));
+        Assert.True(timeline.CompletedValue >= signalValue);
+        Assert.DoesNotContain(
+            instance.ValidationMessages,
+            message =>
+                (message.Severity & VkDebugUtilsMessageSeverityFlagsExt.Error) != 0);
+    }
 }

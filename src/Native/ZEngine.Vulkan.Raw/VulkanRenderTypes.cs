@@ -50,6 +50,19 @@ public enum VkPipelineBindPoint : int
     Compute = 1
 }
 
+public enum VkSemaphoreType : int
+{
+    Binary = 0,
+    Timeline = 1
+}
+
+[Flags]
+public enum VkSemaphoreWaitFlags : uint
+{
+    None = 0,
+    Any = 0x00000001
+}
+
 [Flags]
 public enum VkImageAspectFlags : uint
 {
@@ -161,6 +174,35 @@ public unsafe struct VkSemaphoreCreateInfo
     public VkStructureType SType;
     public void* PNext;
     public uint Flags;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct VkSemaphoreTypeCreateInfo
+{
+    public VkStructureType SType;
+    public void* PNext;
+    public VkSemaphoreType SemaphoreType;
+    public ulong InitialValue;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct VkSemaphoreWaitInfo
+{
+    public VkStructureType SType;
+    public void* PNext;
+    public VkSemaphoreWaitFlags Flags;
+    public uint SemaphoreCount;
+    public VkSemaphore* PSemaphores;
+    public ulong* PValues;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct VkSemaphoreSignalInfo
+{
+    public VkStructureType SType;
+    public void* PNext;
+    public VkSemaphore Semaphore;
+    public ulong Value;
 }
 
 [StructLayout(LayoutKind.Sequential)]

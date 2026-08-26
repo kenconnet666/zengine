@@ -99,7 +99,13 @@ public sealed unsafe class VulkanDevice : IDisposable
                 Synchronization2 = 1,
                 DynamicRendering = 1
             };
-            createInfo.PNext = &features13;
+            VkPhysicalDeviceTimelineSemaphoreFeatures timelineFeatures = new()
+            {
+                SType = VkStructureType.PhysicalDeviceTimelineSemaphoreFeatures,
+                PNext = &features13,
+                TimelineSemaphore = 1
+            };
+            createInfo.PNext = &timelineFeatures;
 
             VkDevice handle = default;
             VulkanException.ThrowIfFailed(
@@ -163,6 +169,9 @@ public sealed unsafe class VulkanDevice : IDisposable
             waitIdle(_handle),
             "vkDeviceWaitIdle");
     }
+
+    public VulkanTimeline CreateTimeline(ulong initialValue = 0) =>
+        new(this, initialValue);
 
     private static nint GetDeviceProc(
         delegate* unmanaged<VkDevice, byte*, nint> getDeviceProcAddress,

@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ZEngine.Graphics\ZEngine.Graphics.csproj" />
     <ProjectReference Include="..\..\Native\ZEngine.Vulkan.Raw\ZEngine.Vulkan.Raw.csproj" />
   </ItemGroup>
 </Project>

@@ -41,6 +41,15 @@ public sealed class VulkanClearRendererTests
         renderer.RenderFrame(0.1f, 0.12f, 0.2f);
         device.WaitIdle();
 
+        Assert.True(renderer.LastSubmittedTimelineValue >= 2);
+        Assert.True(
+            renderer.CompletedTimelineValue
+            >= renderer.LastSubmittedTimelineValue);
+        bool retired = false;
+        renderer.RetireAfterCurrentFrame(() => retired = true);
+        Assert.Equal(1, renderer.CollectRetired());
+        Assert.True(retired);
+
         Assert.DoesNotContain(
             instance.ValidationMessages,
             message =>

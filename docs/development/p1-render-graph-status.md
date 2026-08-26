@@ -20,20 +20,24 @@ Status: P1A backend-neutral graph compiler accepted; Vulkan execution and advanc
 - Conservative alias slots for compatible, non-overlapping transient resources.
 - Parallel command-recording levels.
 - Allocation-free execution of a compiled stable graph.
+- Vulkan timeline-semaphore feature enablement and raw wrapper.
+- GPU submission timeline signaling wired into the current renderer.
+- Timeline-driven deferred-release collection on frame boundaries.
 
 ## Validation evidence
 
 - `dotnet build ZEngine.slnx -c Debug`: zero warnings and zero errors.
-- Microsoft Testing Platform: 16 passed, zero failed.
+- Microsoft Testing Platform: 17 passed, zero failed.
 - RenderGraph suite: seven passed, including cycle, culling, barrier, alias and ownership diagnostics.
 - Stable compiled execution: 10,000 executions measured zero managed bytes on the calling thread.
+- Vulkan timeline semaphore: host signal, wait and counter-value test passed under Khronos validation.
+- Render submission: two GPU frames advanced the timeline and released a deferred callback only after completion.
 - `dotnet format ZEngine.slnx --verify-no-changes`: passed.
 
 ## Remaining P1
 
 - Vulkan allocator baseline behind `IGpuAllocator`.
 - Multi-frame command pools and frame contexts.
-- Timeline semaphore submission and resource retirement integration.
 - Vulkan RenderGraph command sink and barrier translation.
 - Dynamic Rendering Local Read capability path.
 - Descriptor Buffer primary path and fallback.

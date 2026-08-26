@@ -54,7 +54,11 @@ public enum VkStructureType : int
     RenderingInfo = 1000044000,
     RenderingAttachmentInfo = 1000044001,
     PipelineRenderingCreateInfo = 1000044002,
-    DebugUtilsMessengerCreateInfoExt = 1000128004
+    DebugUtilsMessengerCreateInfoExt = 1000128004,
+    PhysicalDeviceTimelineSemaphoreFeatures = 1000207000,
+    SemaphoreTypeCreateInfo = 1000207002,
+    SemaphoreWaitInfo = 1000207004,
+    SemaphoreSignalInfo = 1000207005
 }
 
 public enum VkPhysicalDeviceType : int
@@ -202,6 +206,14 @@ public unsafe struct VkPhysicalDeviceVulkan13Features
     public uint DynamicRendering;
     public uint ShaderIntegerDotProduct;
     public uint Maintenance4;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct VkPhysicalDeviceTimelineSemaphoreFeatures
+{
+    public VkStructureType SType;
+    public void* PNext;
+    public uint TimelineSemaphore;
 }
 
 [StructLayout(LayoutKind.Sequential)]

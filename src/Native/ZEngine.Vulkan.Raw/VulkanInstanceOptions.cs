@@ -8,6 +8,12 @@ public sealed record VulkanInstanceOptions(
     public static VulkanInstanceOptions Default { get; } =
         new(VulkanApiVersion.Create(1, 4, 0), [], false);
 
+    public static VulkanInstanceOptions Validation { get; } =
+        new(
+            VulkanApiVersion.Create(1, 4, 0),
+            ["VK_EXT_debug_utils"],
+            true);
+
     public static VulkanInstanceOptions Win32Surface { get; } =
         new(
             VulkanApiVersion.Create(1, 4, 0),

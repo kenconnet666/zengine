@@ -1,3 +1,4 @@
+using ZEngine.Graphics;
 using ZEngine.Vulkan.Raw;
 using ZEngine.Vulkan.Raw.Generated;
 
@@ -9,6 +10,8 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
     private readonly VulkanDevice _device;
     private readonly VulkanSwapchain _swapchain;
     private readonly VulkanTrianglePipeline? _trianglePipeline;
+    private readonly VulkanTimeline _timeline;
+    private readonly FrameRetirementQueue _retirementQueue = new();
     private readonly VkImageView[] _imageViews;
     private readonly bool[] _initializedImages;
     private readonly delegate* unmanaged<VkDevice, VkImageView, void*, void>
@@ -48,6 +51,10 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
     private VkFence _inFlightFence;
     private bool _disposed;
 
+    public ulong LastSubmittedTimelineValue { get; private set; }
+
+    public ulong CompletedTimelineValue => _timeline.CompletedValue;
+
     public VulkanClearRenderer(
         VulkanDevice device,
         VulkanSwapchain swapchain,
@@ -56,6 +63,7 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
         _device = device;
         _swapchain = swapchain;
         _trianglePipeline = trianglePipeline;
+        _timeline = device.CreateTimeline();
 
         var createImageView =
             (delegate* unmanaged<VkDevice, VkImageViewCreateInfo*, void*, VkImageView*, VkResult>)device.GetProcAddress(
@@ -242,6 +250,7 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
                 1,
                 ulong.MaxValue),
             "vkWaitForFences");
+        _retirementQueue.Collect(_timeline.CompletedValue);
         VulkanException.ThrowIfFailed(
             _resetFences(_device.Handle, 1, &fence),
             "vkResetFences");
@@ -296,10 +305,19 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
             DeviceMask = 1
         };
         VkSemaphore renderFinished = _renderFinished[imageIndex];
-        VkSemaphoreSubmitInfo signalInfo = new()
+        ulong timelineValue = _timeline.ReserveSignalValue();
+        VkSemaphoreSubmitInfo* signalInfos = stackalloc VkSemaphoreSubmitInfo[2];
+        signalInfos[0] = new()
         {
             SType = VkStructureType.SemaphoreSubmitInfo,
             Semaphore = renderFinished,
+            StageMask = VkPipelineStageFlags2.AllCommands
+        };
+        signalInfos[1] = new()
+        {
+            SType = VkStructureType.SemaphoreSubmitInfo,
+            Semaphore = _timeline.Handle,
+            Value = timelineValue,
             StageMask = VkPipelineStageFlags2.AllCommands
         };
         VkSubmitInfo2 submitInfo = new()
@@ -309,8 +327,8 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
             PWaitSemaphoreInfos = &waitInfo,
             CommandBufferInfoCount = 1,
             PCommandBufferInfos = &commandInfo,
-            SignalSemaphoreInfoCount = 1,
-            PSignalSemaphoreInfos = &signalInfo
+            SignalSemaphoreInfoCount = 2,
+            PSignalSemaphoreInfos = signalInfos
         };
         VulkanException.ThrowIfFailed(
             _queueSubmit2(
@@ -319,6 +337,7 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
                 &submitInfo,
                 _inFlightFence),
             "vkQueueSubmit2");
+        LastSubmittedTimelineValue = timelineValue;
 
         VkSwapchainKHR swapchain = _swapchain.Handle;
         VkPresentInfoKhr presentInfo = new()
@@ -340,6 +359,18 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
         _initializedImages[imageIndex] = true;
     }
 
+    public void RetireAfterCurrentFrame(Action release)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        _retirementQueue.Retire(LastSubmittedTimelineValue, release);
+    }
+
+    public int CollectRetired()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return _retirementQueue.Collect(_timeline.CompletedValue);
+    }
+
     public void Dispose()
     {
         if (_disposed)
@@ -349,6 +380,7 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
 
         _disposed = true;
         _device.WaitIdle();
+        _retirementQueue.Collect(ulong.MaxValue);
 
         if (!_inFlightFence.IsNull)
         {
@@ -401,6 +433,8 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
                     null);
             }
         }
+
+        _timeline.Dispose();
     }
 
     private void TransitionToColorAttachment(uint imageIndex)
