@@ -44,6 +44,7 @@ Status: P1A backend-neutral graph compiler accepted; Vulkan execution and advanc
 - Khronos validation: the graph-generated multi-pass barrier path rendered and presented with zero error-severity messages.
 - Computer Use visual evidence: the graph-driven visible window displayed the expected interpolated RGB triangle after the renderer migration.
 - Multi-frame validation stress: clear and triangle tests each submitted eight frames across both frame slots with zero validation errors.
+- Window-generation validation: resize, minimize, restore and two swapchain rebuilds completed with zero validation errors.
 - `dotnet format ZEngine.slnx --verify-no-changes`: passed.
 
 ## Remaining P1
@@ -53,5 +54,4 @@ Status: P1A backend-neutral graph compiler accepted; Vulkan execution and advanc
 - Descriptor Buffer primary path and fallback.
 - Pipeline cache and failure-safe shader/pipeline hot reload.
 - Debug labels and RenderDoc capture naming.
-- Resize, minimize, restore and swapchain-generation rebuild.
 - Hardware validation stress tests without a routine `vkDeviceWaitIdle` frame path.

@@ -9,6 +9,11 @@ internal static unsafe partial class Win32Native
     internal const uint WsOverlappedWindow = 0x00CF0000;
     internal const int CwUseDefault = unchecked((int)0x80000000);
     internal const int SwShow = 5;
+    internal const int SwMinimize = 6;
+    internal const int SwRestore = 9;
+    internal const uint SwpNoMove = 0x0002;
+    internal const uint SwpNoZOrder = 0x0004;
+    internal const uint SwpNoActivate = 0x0010;
     internal const uint PmRemove = 0x0001;
     internal const uint WmClose = 0x0010;
     internal const uint WmDestroy = 0x0002;
@@ -49,6 +54,38 @@ internal static unsafe partial class Win32Native
     [LibraryImport("user32.dll", EntryPoint = "ShowWindow")]
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static partial bool ShowWindow(nint window, int command);
+
+    [LibraryImport("user32.dll", EntryPoint = "GetClientRect",
+        SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static partial bool GetClientRect(
+        nint window,
+        out Rect rectangle);
+
+    [LibraryImport("user32.dll", EntryPoint = "AdjustWindowRectEx",
+        SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static partial bool AdjustWindowRectEx(
+        ref Rect rectangle,
+        uint style,
+        [MarshalAs(UnmanagedType.Bool)] bool hasMenu,
+        uint extendedStyle);
+
+    [LibraryImport("user32.dll", EntryPoint = "SetWindowPos",
+        SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static partial bool SetWindowPos(
+        nint window,
+        nint insertAfter,
+        int x,
+        int y,
+        int width,
+        int height,
+        uint flags);
+
+    [LibraryImport("user32.dll", EntryPoint = "IsIconic")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static partial bool IsIconic(nint window);
 
     [LibraryImport("user32.dll", EntryPoint = "PeekMessageW")]
     [return: MarshalAs(UnmanagedType.Bool)]
@@ -125,6 +162,15 @@ internal struct Point
 {
     internal int X;
     internal int Y;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct Rect
+{
+    internal int Left;
+    internal int Top;
+    internal int Right;
+    internal int Bottom;
 }
 
 [StructLayout(LayoutKind.Sequential)]

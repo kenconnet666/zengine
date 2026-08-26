@@ -52,20 +52,21 @@ Status: P0 accepted, including validation-layer and visible hardware gates.
 ## Validation evidence
 
 - dotnet build ZEngine.slnx -c Debug: passed with zero warnings and zero errors.
-- dotnet test using Microsoft Testing Platform: nine passed, zero failed.
+- dotnet test using Microsoft Testing Platform: 18 passed, zero failed.
 - ZEngine.Host: detected Windows x64 and win-x64.
 - Vulkan Raw probe: loaded vulkan-1.dll through NativeLibrary and reported Vulkan loader API 1.4.341.
 - Vulkan Instance probe: enumerated AMD Radeon RX 9070 GRE as Vulkan 1.4.349, vendor 0x1002, device 0x7550.
 - Vulkan Device probe: selected graphics queue family 0 and created a logical device and graphics queue.
 - Hidden-window test: created Win32 VkSurfaceKHR and a swapchain with at least two images.
-- Visible-window smoke: created a 944x501 B8G8R8A8Srgb FIFO swapchain with three images and pumped events for two seconds.
+- Visible-window smoke: created a 944x501 B8G8R8A8Srgb FIFO swapchain with three images.
 - Self-contained win-x64 Release publish: produced and executed artifacts/publish/win-x64/ZEngine.Host.exe.
 - Hidden render test: cleared and presented two swapchain frames through dynamic rendering.
 - Hidden triangle test: created shader modules and graphics pipeline, drew and presented two frames.
 - Computer Use visual evidence: captured the visible ZEngine Vulkan 1.4 Smoke window with a correctly interpolated RGB triangle.
 - Release self-contained triangle smoke: loaded packaged SPIR-V and presented the same pipeline.
 - Vulkan SDK 1.4.357.0 `spirv-val`: both generated shader modules passed.
-- Khronos validation layer 1.4.357: all nine tests and the visible triangle smoke completed with zero validation errors.
+- Resize/minimize/restore smoke: rebuilt swapchain generations at 944x501, 800x450 and 720x405; suspended submission while minimized.
+- Khronos validation layer 1.4.357: all 18 tests and the automated resize smoke completed with zero validation errors.
 - Debug messenger gate: the host printed `Vulkan validation messenger reported no errors.` and would return failure for any error-severity callback.
 - HelloZEngine: executed successfully.
 

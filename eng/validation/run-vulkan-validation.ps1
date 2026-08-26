@@ -50,8 +50,7 @@ try {
             -c Debug `
             --no-build `
             -- `
-            --window-smoke `
-            --window-seconds=2
+            --resize-smoke
         if ($LASTEXITCODE -ne 0) {
             throw "Visible Vulkan smoke failed with exit code $LASTEXITCODE."
         }

@@ -16,11 +16,20 @@ try
     bool windowSmoke = args.Contains(
         "--window-smoke",
         StringComparer.Ordinal);
+    bool resizeSmoke = args.Contains(
+        "--resize-smoke",
+        StringComparer.Ordinal);
+    windowSmoke |= resizeSmoke;
     double windowSeconds = 2;
     string? durationArgument = args.FirstOrDefault(
         argument => argument.StartsWith(
             "--window-seconds=",
             StringComparison.Ordinal));
+    if (resizeSmoke && durationArgument is null)
+    {
+        windowSeconds = 3.5;
+    }
+
     if (durationArgument is not null
         && (!double.TryParse(
                 durationArgument["--window-seconds=".Length..],
@@ -84,17 +93,6 @@ try
         using VulkanDevice device = instance.CreateGraphicsDevice(
             selected,
             enableSwapchain: true);
-        using VulkanSwapchain swapchain = surface.CreateSwapchain(
-            device,
-            selected,
-            window.ClientSize.Width,
-            window.ClientSize.Height);
-
-        Console.WriteLine(
-            $"Swapchain created: {swapchain.Extent.Width}x{swapchain.Extent.Height}, "
-            + $"{swapchain.SurfaceFormat.Format}, {swapchain.PresentMode}, "
-            + $"{swapchain.Images.Count} images.");
-
         byte[] vertexShader = File.ReadAllBytes(
             Path.Combine(
                 AppContext.BaseDirectory,
@@ -105,24 +103,78 @@ try
                 AppContext.BaseDirectory,
                 "Shaders",
                 "triangle.frag.spv"));
-        using VulkanTrianglePipeline trianglePipeline = new(
+        using VulkanWindowRenderer renderer = new(
             device,
-            swapchain.SurfaceFormat.Format,
+            selected,
+            surface,
             vertexShader,
             fragmentShader);
-        using VulkanClearRenderer renderer = new(
-            device,
-            swapchain,
-            trianglePipeline);
+        WindowSize initialSize = window.ClientSize;
+        renderer.Prepare(
+            initialSize.Width,
+            initialSize.Height,
+            window.IsMinimized);
+        VkExtent2D initialExtent = renderer.Extent
+            ?? throw new InvalidOperationException(
+                "The visible window did not produce a swapchain extent.");
+        Console.WriteLine(
+            $"Swapchain generation {renderer.Generation}: "
+            + $"{initialExtent.Width}x{initialExtent.Height}.");
+
         DateTime deadline = DateTime.UtcNow.AddSeconds(windowSeconds);
+        DateTime started = DateTime.UtcNow;
         float phase = 0;
+        uint reportedGeneration = renderer.Generation;
+        int resizePhase = 0;
         while (DateTime.UtcNow < deadline && window.PumpEvents())
         {
+            if (resizeSmoke)
+            {
+                double elapsed = (DateTime.UtcNow - started).TotalSeconds;
+                if (resizePhase == 0 && elapsed >= 0.5)
+                {
+                    window.ResizeClient(800, 450);
+                    resizePhase = 1;
+                    Console.WriteLine("Resize smoke: 800x450 requested.");
+                }
+                else if (resizePhase == 1 && elapsed >= 1.25)
+                {
+                    window.Minimize();
+                    resizePhase = 2;
+                    Console.WriteLine("Resize smoke: minimized.");
+                }
+                else if (resizePhase == 2 && elapsed >= 2.0)
+                {
+                    window.Restore();
+                    window.ResizeClient(720, 405);
+                    resizePhase = 3;
+                    Console.WriteLine("Resize smoke: restored at 720x405.");
+                }
+            }
+
+            WindowSize size = window.ClientSize;
             float red = 0.08f + 0.04f * MathF.Sin(phase);
             float blue = 0.14f + 0.05f * MathF.Cos(phase);
-            renderer.RenderFrame(red, 0.10f, blue);
+            renderer.RenderFrame(
+                size.Width,
+                size.Height,
+                window.IsMinimized,
+                red,
+                0.10f,
+                blue);
+            if (renderer.Generation != reportedGeneration)
+            {
+                reportedGeneration = renderer.Generation;
+                VkExtent2D extent = renderer.Extent
+                    ?? throw new InvalidOperationException(
+                        "A live swapchain generation has no extent.");
+                Console.WriteLine(
+                    $"Swapchain generation {reportedGeneration}: "
+                    + $"{extent.Width}x{extent.Height}.");
+            }
+
             phase += 0.04f;
-            Thread.Sleep(16);
+            Thread.Sleep(window.IsMinimized ? 50 : 16);
         }
 
         device.WaitIdle();

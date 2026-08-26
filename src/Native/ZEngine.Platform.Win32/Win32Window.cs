@@ -13,19 +13,36 @@ public sealed unsafe class Win32Window : INativeWindow
 
     private Win32Window(
         nint window,
-        nint instance,
-        WindowSize clientSize)
+        nint instance)
     {
         _window = window;
         NativeInstance = instance;
-        ClientSize = clientSize;
     }
 
     public nint NativeHandle => _window;
 
     public nint NativeInstance { get; }
 
-    public WindowSize ClientSize { get; }
+    public WindowSize ClientSize
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf(_window == 0, this);
+            if (!Win32Native.GetClientRect(_window, out Rect rectangle))
+            {
+                throw new Win32Exception(
+                    Marshal.GetLastPInvokeError(),
+                    "GetClientRect failed.");
+            }
+
+            return new(
+                checked((uint)Math.Max(0, rectangle.Right - rectangle.Left)),
+                checked((uint)Math.Max(0, rectangle.Bottom - rectangle.Top)));
+        }
+    }
+
+    public bool IsMinimized =>
+        _window != 0 && Win32Native.IsIconic(_window);
 
     public static Win32Window Create(
         string title,
@@ -64,7 +81,7 @@ public sealed unsafe class Win32Window : INativeWindow
                 "CreateWindowExW failed.");
         }
 
-        Win32Window result = new(window, instance, new(width, height));
+        Win32Window result = new(window, instance);
         if (visible)
         {
             result.Show();
@@ -98,6 +115,57 @@ public sealed unsafe class Win32Window : INativeWindow
     {
         ObjectDisposedException.ThrowIf(_window == 0, this);
         Win32Native.ShowWindow(_window, Win32Native.SwShow);
+    }
+
+    public void ResizeClient(uint width, uint height)
+    {
+        ObjectDisposedException.ThrowIf(_window == 0, this);
+        ArgumentOutOfRangeException.ThrowIfZero(width);
+        ArgumentOutOfRangeException.ThrowIfZero(height);
+
+        Rect rectangle = new()
+        {
+            Right = checked((int)width),
+            Bottom = checked((int)height)
+        };
+        if (!Win32Native.AdjustWindowRectEx(
+                ref rectangle,
+                Win32Native.WsOverlappedWindow,
+                false,
+                0))
+        {
+            throw new Win32Exception(
+                Marshal.GetLastPInvokeError(),
+                "AdjustWindowRectEx failed.");
+        }
+
+        if (!Win32Native.SetWindowPos(
+                _window,
+                0,
+                0,
+                0,
+                rectangle.Right - rectangle.Left,
+                rectangle.Bottom - rectangle.Top,
+                Win32Native.SwpNoMove
+                | Win32Native.SwpNoZOrder
+                | Win32Native.SwpNoActivate))
+        {
+            throw new Win32Exception(
+                Marshal.GetLastPInvokeError(),
+                "SetWindowPos failed.");
+        }
+    }
+
+    public void Minimize()
+    {
+        ObjectDisposedException.ThrowIf(_window == 0, this);
+        Win32Native.ShowWindow(_window, Win32Native.SwMinimize);
+    }
+
+    public void Restore()
+    {
+        ObjectDisposedException.ThrowIf(_window == 0, this);
+        Win32Native.ShowWindow(_window, Win32Native.SwRestore);
     }
 
     public void Dispose()
