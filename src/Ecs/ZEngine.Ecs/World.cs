@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace ZEngine.Ecs;
 
-public sealed class World
+public sealed partial class World
 {
     private readonly Dictionary<ulong, Archetype> _archetypesByMask = [];
     private readonly List<Archetype> _archetypes = [];

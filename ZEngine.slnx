@@ -26,12 +26,15 @@
     <Project Path="src/Agent/ZEngine.AgentHost/ZEngine.AgentHost.csproj" />
     <Project Path="src/Assets/ZEngine.Assets/ZEngine.Assets.csproj" />
     <Project Path="src/Assets/ZEngine.AssetImporters/ZEngine.AssetImporters.csproj" />
+    <Project Path="src/Editor/ZEngine.Editor/ZEngine.Editor.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/HelloZEngine/HelloZEngine.csproj" />
     <Project Path="samples/UiLab.Shared/UiLab.Shared.csproj" />
     <Project Path="samples/UiLab.Web/UiLab.Web.csproj" />
     <Project Path="samples/UiLab.Native/UiLab.Native.csproj" />
+    <Project Path="samples/ZEngine.PlayProbe/ZEngine.PlayProbe.csproj" />
+    <Project Path="samples/EditorLab.Native/EditorLab.Native.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/ZEngine.Vulkan.Registry.Tests/ZEngine.Vulkan.Registry.Tests.csproj" />
@@ -45,6 +48,7 @@
     <Project Path="tests/ZEngine.UI.Tests/ZEngine.UI.Tests.csproj" />
     <Project Path="tests/ZEngine.Agent.Tests/ZEngine.Agent.Tests.csproj" />
     <Project Path="tests/ZEngine.Assets.Tests/ZEngine.Assets.Tests.csproj" />
+    <Project Path="tests/ZEngine.Editor.Tests/ZEngine.Editor.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/fixtures/">
     <Project Path="tests/Fixtures/ZEngine.CounterPlugin.Contracts/ZEngine.CounterPlugin.Contracts.csproj" />

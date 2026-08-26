@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZEngine.Editor</RootNamespace>
+    <AssemblyName>ZEngine.Editor</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Assets\ZEngine.Assets\ZEngine.Assets.csproj" />
+    <ProjectReference Include="..\..\Ecs\ZEngine.Ecs\ZEngine.Ecs.csproj" />
+    <ProjectReference Include="..\..\Graphics\ZEngine.RenderGraph\ZEngine.RenderGraph.csproj" />
+    <ProjectReference Include="..\..\Plugins\ZEngine.Plugins.Runtime\ZEngine.Plugins.Runtime.csproj" />
+    <ProjectReference Include="..\..\UI\Zui.Basic\Zui.Basic.csproj" />
+  </ItemGroup>
+</Project>

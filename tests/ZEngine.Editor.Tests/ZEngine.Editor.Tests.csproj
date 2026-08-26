@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>ZEngine.Editor.Tests</RootNamespace>
+    <AssemblyName>ZEngine.Editor.Tests</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Editor\ZEngine.Editor\ZEngine.Editor.csproj" />
+    <ProjectReference Include="..\..\samples\ZEngine.PlayProbe\ZEngine.PlayProbe.csproj" />
+  </ItemGroup>
+</Project>
