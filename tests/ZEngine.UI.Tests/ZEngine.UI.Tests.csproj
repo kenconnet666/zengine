@@ -17,5 +17,7 @@
     <ProjectReference Include="..\..\src\UI\Zui.Backend.Blazor\Zui.Backend.Blazor.csproj" />
     <ProjectReference Include="..\..\src\UI\Zui.Rendering\Zui.Rendering.csproj" />
     <ProjectReference Include="..\..\src\UI\Zui.Platform.Windows\Zui.Platform.Windows.csproj" />
+    <ProjectReference Include="..\..\src\UI\Zui.Sdk\Zui.Sdk.csproj" />
+    <ProjectReference Include="..\..\src\Plugins\ZEngine.Plugins.Abstractions\ZEngine.Plugins.Abstractions.csproj" />
   </ItemGroup>
 </Project>

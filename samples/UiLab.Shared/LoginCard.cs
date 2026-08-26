@@ -56,6 +56,8 @@ public sealed class LoginCard : Component<AppTheme>
                     input.Semantics(UiRole.TextBox, "用户名");
                     input.Value(UserName.Value);
                     input.Placeholder("请输入用户名");
+                    input.BackgroundColor.Page();
+                    input.Color.Text();
                     input.Padding.XY(12, 10);
                     input.Border.Width(1).Radius(8).DefaultColor();
                     input.OnInput(HandleInput);

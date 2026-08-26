@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>UiLab.Native</RootNamespace>
+    <AssemblyName>UiLab.Native</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\UiLab.Shared\UiLab.Shared.csproj" />
+    <ProjectReference Include="..\..\src\Graphics\ZEngine.Graphics.Vulkan\ZEngine.Graphics.Vulkan.csproj" />
+    <ProjectReference Include="..\..\src\Native\ZEngine.Platform.Win32\ZEngine.Platform.Win32.csproj" />
+    <ProjectReference Include="..\..\src\UI\Zui.Backend.Vulkan\Zui.Backend.Vulkan.csproj" />
+    <ProjectReference Include="..\..\src\UI\Zui.Rendering\Zui.Rendering.csproj" />
+    <ProjectReference Include="..\..\src\UI\Zui.Platform.Windows\Zui.Platform.Windows.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\shaders\compiled\triangle.vert.spv"
+             Link="Shaders\triangle.vert.spv"
+             CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\shaders\compiled\triangle.frag.spv"
+             Link="Shaders\triangle.frag.spv"
+             CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\shaders\compiled\ui.vert.spv"
+             Link="Shaders\ui.vert.spv"
+             CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\shaders\compiled\ui.frag.spv"
+             Link="Shaders\ui.frag.spv"
+             CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -53,7 +53,9 @@ public enum VkColorComponentFlags : uint
 public enum VkBlendFactor : int
 {
     Zero = 0,
-    One = 1
+    One = 1,
+    SourceAlpha = 6,
+    OneMinusSourceAlpha = 7
 }
 
 public enum VkBlendOp : int
@@ -206,6 +208,14 @@ public unsafe struct VkPipelineLayoutCreateInfo
     public VkDescriptorSetLayout* PSetLayouts;
     public uint PushConstantRangeCount;
     public void* PPushConstantRanges;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct VkPushConstantRange
+{
+    public VkShaderStageFlags StageFlags;
+    public uint Offset;
+    public uint Size;
 }
 
 [StructLayout(LayoutKind.Sequential)]

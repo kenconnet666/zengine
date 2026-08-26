@@ -76,11 +76,14 @@ public sealed class UiLayoutEngine
             {
                 UiNode child = node.Children[index];
                 float remaining = Math.Max(0, contentWidth - (cursorX - x));
+                float childAvailable = child.Style.Width.Unit == LengthUnit.Auto
+                    ? Math.Min(remaining, IntrinsicWidth(child))
+                    : remaining;
                 UiRect childBounds = LayoutNode(
                     child,
                     cursorX,
                     y + marginTop + paddingTop,
-                    remaining,
+                    childAvailable,
                     availableHeight,
                     layout);
                 cursorX += childBounds.Width + gap;
@@ -99,9 +102,21 @@ public sealed class UiLayoutEngine
                     cursorY += gap;
                 }
 
+                UiNode child = node.Children[index];
+                float childWidth = child.Style.Width.Unit == LengthUnit.Auto
+                    ? contentWidth
+                    : Resolve(child.Style.Width, contentWidth, contentWidth);
+                float childX = style.AlignItems switch
+                {
+                    AlignItems.Center =>
+                        x + marginLeft + paddingLeft + (contentWidth - childWidth) / 2,
+                    AlignItems.End =>
+                        x + marginLeft + paddingLeft + contentWidth - childWidth,
+                    _ => x + marginLeft + paddingLeft
+                };
                 UiRect childBounds = LayoutNode(
-                    node.Children[index],
-                    x + marginLeft + paddingLeft,
+                    child,
+                    childX,
                     cursorY,
                     contentWidth,
                     availableHeight,
@@ -147,6 +162,30 @@ public sealed class UiLayoutEngine
 
     private static float Pixels(UiLength length, float reference) =>
         Resolve(length, 0, reference);
+
+    private static float IntrinsicWidth(UiNode node)
+    {
+        float textWidth = 0;
+        if (node.Text is { } text)
+        {
+            int runes = 0;
+            foreach (Rune _ in text.EnumerateRunes())
+            {
+                runes++;
+            }
+
+            textWidth = runes * node.Style.FontSize * 0.65f;
+        }
+
+        float childWidth = node.Children.Count == 0
+            ? 0
+            : node.Style.FlexDirection == FlexDirection.Row
+                ? node.Children.Sum(IntrinsicWidth)
+                : node.Children.Max(IntrinsicWidth);
+        return Math.Max(textWidth, childWidth)
+               + Pixels(node.Style.Padding.Left, 0)
+               + Pixels(node.Style.Padding.Right, 0);
+    }
 }
 
 public abstract record UiPaintCommand(UiNodeId Node);

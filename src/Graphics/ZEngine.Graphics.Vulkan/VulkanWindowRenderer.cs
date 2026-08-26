@@ -20,9 +20,11 @@ public sealed class VulkanWindowRenderer : IDisposable
     private readonly VulkanPipelineCache _pipelineCache;
     private readonly VulkanGpuAllocator _allocator;
     private readonly VulkanDescriptorHeap? _descriptorHeap;
+    private readonly IVulkanOverlayFactory? _overlayFactory;
     private VulkanSwapchain? _swapchain;
     private VulkanTrianglePipeline? _pipeline;
     private VulkanClearRenderer? _renderer;
+    private IVulkanOverlay? _overlay;
     private bool _disposed;
 
     public VulkanWindowRenderer(
@@ -31,7 +33,8 @@ public sealed class VulkanWindowRenderer : IDisposable
         VulkanSurface surface,
         ReadOnlySpan<byte> vertexShader,
         ReadOnlySpan<byte> fragmentShader,
-        ReadOnlySpan<byte> initialPipelineCache = default)
+        ReadOnlySpan<byte> initialPipelineCache = default,
+        IVulkanOverlayFactory? overlayFactory = null)
     {
         ArgumentNullException.ThrowIfNull(device);
         ArgumentNullException.ThrowIfNull(physicalDevice);
@@ -44,6 +47,7 @@ public sealed class VulkanWindowRenderer : IDisposable
         _device = device;
         _physicalDevice = physicalDevice;
         _surface = surface;
+        _overlayFactory = overlayFactory;
         _pipelineCache = new(device, initialPipelineCache);
         _allocator = new(device, physicalDevice.MemoryProperties);
         try
@@ -228,6 +232,7 @@ public sealed class VulkanWindowRenderer : IDisposable
             requestedWidth,
             requestedHeight);
         VulkanTrianglePipeline? pipeline = null;
+        IVulkanOverlay? overlay = null;
         VulkanClearRenderer? renderer = null;
         try
         {
@@ -237,15 +242,20 @@ public sealed class VulkanWindowRenderer : IDisposable
                 _vertexShader,
                 _fragmentShader,
                 _pipelineCache);
+            overlay = _overlayFactory?.Create(
+                _device,
+                swapchain.SurfaceFormat.Format);
             renderer = new(
                 _device,
                 swapchain,
                 pipeline,
-                _descriptorHeap);
+                _descriptorHeap,
+                overlay);
         }
         catch
         {
             renderer?.Dispose();
+            overlay?.Dispose();
             pipeline?.Dispose();
             swapchain.Dispose();
             throw;
@@ -253,6 +263,7 @@ public sealed class VulkanWindowRenderer : IDisposable
 
         _swapchain = swapchain;
         _pipeline = pipeline;
+        _overlay = overlay;
         _renderer = renderer;
         Generation++;
     }
@@ -261,6 +272,8 @@ public sealed class VulkanWindowRenderer : IDisposable
     {
         _renderer?.Dispose();
         _renderer = null;
+        _overlay?.Dispose();
+        _overlay = null;
         _pipeline?.Dispose();
         _pipeline = null;
         _swapchain?.Dispose();

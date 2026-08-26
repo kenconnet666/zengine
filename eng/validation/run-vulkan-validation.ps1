@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [switch]$SkipBuild,
-    [switch]$SkipWindowSmoke
+    [switch]$SkipWindowSmoke,
+    [switch]$SkipNativeUi
 )
 
 $ErrorActionPreference = 'Stop'
@@ -37,6 +38,16 @@ try {
         throw "Alternate fragment SPIR-V validation failed with exit code $LASTEXITCODE."
     }
 
+    & $spirvValidator (Join-Path $repositoryRoot 'shaders/compiled/ui.vert.spv')
+    if ($LASTEXITCODE -ne 0) {
+        throw "UI vertex SPIR-V validation failed with exit code $LASTEXITCODE."
+    }
+
+    & $spirvValidator (Join-Path $repositoryRoot 'shaders/compiled/ui.frag.spv')
+    if ($LASTEXITCODE -ne 0) {
+        throw "UI fragment SPIR-V validation failed with exit code $LASTEXITCODE."
+    }
+
     if (-not $SkipBuild) {
         dotnet build (Join-Path $repositoryRoot 'ZEngine.slnx') -c Debug --nologo
         if ($LASTEXITCODE -ne 0) {
@@ -59,6 +70,18 @@ try {
             --shader-reload-smoke
         if ($LASTEXITCODE -ne 0) {
             throw "Visible Vulkan smoke failed with exit code $LASTEXITCODE."
+        }
+    }
+
+    if (-not $SkipNativeUi) {
+        dotnet run `
+            --project (Join-Path $repositoryRoot 'samples/UiLab.Native/UiLab.Native.csproj') `
+            -c Debug `
+            --no-build `
+            -- `
+            --seconds=2
+        if ($LASTEXITCODE -ne 0) {
+            throw "Native Vulkan UiLab failed with exit code $LASTEXITCODE."
         }
     }
 }

@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.Web.HtmlRendering;
@@ -109,6 +110,13 @@ public sealed class UiRuntimeTests
                 '中',
                 32));
             Assert.True(slot.Generation > 0);
+            using GdiGlyphRasterizer rasterizer = new();
+            RasterizedGlyph glyph = rasterizer.Rasterize(
+                Rune.GetRuneAt("中", 0),
+                28,
+                400);
+            Assert.True(glyph.Width > 0);
+            Assert.Contains(glyph.Alpha, alpha => alpha > 0);
         }
     }
 

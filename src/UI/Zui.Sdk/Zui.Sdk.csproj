@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZEngine.UI.Sdk</RootNamespace>
+    <AssemblyName>Zui.Sdk</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Zui.Core\Zui.Core.csproj" />
+  </ItemGroup>
+</Project>

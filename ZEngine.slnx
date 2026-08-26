@@ -20,11 +20,14 @@
     <Project Path="src/UI/Zui.Backend.Blazor/Zui.Backend.Blazor.csproj" />
     <Project Path="src/UI/Zui.Rendering/Zui.Rendering.csproj" />
     <Project Path="src/UI/Zui.Platform.Windows/Zui.Platform.Windows.csproj" />
+    <Project Path="src/UI/Zui.Backend.Vulkan/Zui.Backend.Vulkan.csproj" />
+    <Project Path="src/UI/Zui.Sdk/Zui.Sdk.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/HelloZEngine/HelloZEngine.csproj" />
     <Project Path="samples/UiLab.Shared/UiLab.Shared.csproj" />
     <Project Path="samples/UiLab.Web/UiLab.Web.csproj" />
+    <Project Path="samples/UiLab.Native/UiLab.Native.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/ZEngine.Vulkan.Registry.Tests/ZEngine.Vulkan.Registry.Tests.csproj" />

@@ -19,6 +19,7 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
     private readonly VulkanDebugUtilities _debug;
     private readonly byte[][] _passLabels;
     private readonly VulkanDescriptorHeap? _descriptorHeap;
+    private readonly IVulkanOverlay? _overlay;
     private readonly VkImageView[] _imageViews;
     private readonly bool[] _initializedImages;
     private readonly delegate* unmanaged<VkDevice, VkImageView, void*, void>
@@ -67,12 +68,14 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
         VulkanDevice device,
         VulkanSwapchain swapchain,
         VulkanTrianglePipeline? trianglePipeline = null,
-        VulkanDescriptorHeap? descriptorHeap = null)
+        VulkanDescriptorHeap? descriptorHeap = null,
+        IVulkanOverlay? overlay = null)
     {
         _device = device;
         _swapchain = swapchain;
         _trianglePipeline = trianglePipeline;
         _descriptorHeap = descriptorHeap;
+        _overlay = overlay;
         _timeline = device.CreateTimeline();
 
         var createImageView =
@@ -223,7 +226,8 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
                 "vkQueuePresentKHR\0"u8);
         _renderGraph = BuildFrameGraph(
             swapchain,
-            trianglePipeline is not null);
+            trianglePipeline is not null,
+            overlay is not null);
         _debug = new(device);
         int passLabelCount = _renderGraph.Passes.Count == 0
             ? 0
@@ -562,7 +566,8 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
 
     private static CompiledRenderGraph BuildFrameGraph(
         VulkanSwapchain swapchain,
-        bool drawTriangle)
+        bool drawTriangle,
+        bool drawOverlay)
     {
         RenderGraphBuilder graph = new();
         RenderImage<ColorTarget> color = graph.ImportImage<ColorTarget>(
@@ -605,6 +610,24 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
                     commands
                         .GetBackend<IVulkanRenderGraphCommands>()
                         .DrawTriangle());
+            });
+        }
+
+        if (drawOverlay)
+        {
+            graph.Pass<FramePassData>("Frame.Ui", pass =>
+            {
+                pass.ReadWrite(
+                    color,
+                    ImageAccess.ColorAttachment(
+                        LoadOp.Load,
+                        StoreOp.Store));
+                pass.Execute(static (
+                    ref RenderGraphCommandContext commands,
+                    in FramePassData _) =>
+                    commands
+                        .GetBackend<IVulkanRenderGraphCommands>()
+                        .DrawOverlay());
             });
         }
 
@@ -816,6 +839,19 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
                 ?? throw new InvalidOperationException(
                     "The frame graph requested a triangle without a pipeline.");
             pipeline.Draw(
+                _commandBuffer,
+                _renderer._swapchain.Extent);
+        }
+
+        public void DrawOverlay()
+        {
+            if (!_rendering)
+            {
+                throw new InvalidOperationException(
+                    "DrawOverlay requires an active dynamic-rendering scope.");
+            }
+
+            _renderer._overlay?.Draw(
                 _commandBuffer,
                 _renderer._swapchain.Extent);
         }

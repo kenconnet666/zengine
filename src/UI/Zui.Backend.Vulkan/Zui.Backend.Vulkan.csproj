@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <RootNamespace>ZEngine.UI.Windows</RootNamespace>
-    <AssemblyName>Zui.Platform.Windows</AssemblyName>
+    <RootNamespace>ZEngine.UI.Vulkan</RootNamespace>
+    <AssemblyName>Zui.Backend.Vulkan</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Zui.Core\Zui.Core.csproj" />
+    <ProjectReference Include="..\..\Graphics\ZEngine.Graphics.Vulkan\ZEngine.Graphics.Vulkan.csproj" />
     <ProjectReference Include="..\Zui.Rendering\Zui.Rendering.csproj" />
   </ItemGroup>
 </Project>
