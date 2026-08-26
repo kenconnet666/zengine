@@ -17,6 +17,7 @@ public sealed class VulkanWindowRenderer : IDisposable
     private byte[] _fragmentShader;
     private byte[] _vertexShaderHash;
     private byte[] _fragmentShaderHash;
+    private readonly VulkanPipelineCache _pipelineCache;
     private VulkanSwapchain? _swapchain;
     private VulkanTrianglePipeline? _pipeline;
     private VulkanClearRenderer? _renderer;
@@ -27,7 +28,8 @@ public sealed class VulkanWindowRenderer : IDisposable
         VulkanPhysicalDeviceInfo physicalDevice,
         VulkanSurface surface,
         ReadOnlySpan<byte> vertexShader,
-        ReadOnlySpan<byte> fragmentShader)
+        ReadOnlySpan<byte> fragmentShader,
+        ReadOnlySpan<byte> initialPipelineCache = default)
     {
         ArgumentNullException.ThrowIfNull(device);
         ArgumentNullException.ThrowIfNull(physicalDevice);
@@ -40,6 +42,7 @@ public sealed class VulkanWindowRenderer : IDisposable
         _device = device;
         _physicalDevice = physicalDevice;
         _surface = surface;
+        _pipelineCache = new(device, initialPipelineCache);
         _vertexShader = vertexShader.ToArray();
         _fragmentShader = fragmentShader.ToArray();
         _vertexShaderHash = SHA256.HashData(vertexShader);
@@ -54,6 +57,8 @@ public sealed class VulkanWindowRenderer : IDisposable
     public VkExtent2D? Extent => _swapchain?.Extent;
 
     public CompiledRenderGraph? FrameGraph => _renderer?.FrameGraph;
+
+    public byte[] GetPipelineCacheData() => _pipelineCache.Snapshot();
 
     public bool Prepare(
         uint requestedWidth,
@@ -147,7 +152,8 @@ public sealed class VulkanWindowRenderer : IDisposable
                     _device,
                     _swapchain.SurfaceFormat.Format,
                     nextVertex,
-                    nextFragment);
+                    nextFragment,
+                    _pipelineCache);
             }
         }
         catch (Exception exception)
@@ -187,6 +193,7 @@ public sealed class VulkanWindowRenderer : IDisposable
 
         _disposed = true;
         DestroyGeneration();
+        _pipelineCache.Dispose();
     }
 
     private void Recreate(uint requestedWidth, uint requestedHeight)
@@ -205,7 +212,8 @@ public sealed class VulkanWindowRenderer : IDisposable
                 _device,
                 swapchain.SurfaceFormat.Format,
                 _vertexShader,
-                _fragmentShader);
+                _fragmentShader,
+                _pipelineCache);
             renderer = new(_device, swapchain, pipeline);
         }
         catch

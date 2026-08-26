@@ -16,6 +16,8 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
     private readonly FrameRetirementQueue _retirementQueue = new();
     private readonly CompiledRenderGraph _renderGraph;
     private readonly FrameGraphSink _graphSink;
+    private readonly VulkanDebugUtilities _debug;
+    private readonly byte[][] _passLabels;
     private readonly VkImageView[] _imageViews;
     private readonly bool[] _initializedImages;
     private readonly delegate* unmanaged<VkDevice, VkImageView, void*, void>
@@ -55,6 +57,8 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
     public CompiledRenderGraph FrameGraph => _renderGraph;
 
     public int FrameResourceCount => _frames.Length;
+
+    public bool DebugLabelsEnabled => _debug.IsEnabled;
 
     public VulkanClearRenderer(
         VulkanDevice device,
@@ -215,6 +219,30 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
         _renderGraph = BuildFrameGraph(
             swapchain,
             trianglePipeline is not null);
+        _debug = new(device);
+        int passLabelCount = _renderGraph.Passes.Count == 0
+            ? 0
+            : _renderGraph.Passes.Max(pass => pass.OriginalIndex) + 1;
+        _passLabels = new byte[passLabelCount][];
+        foreach (CompiledRenderPass pass in _renderGraph.Passes)
+        {
+            _passLabels[pass.OriginalIndex] =
+                _debug.EncodeLabel(pass.Name);
+        }
+
+        for (int index = 0; index < _imageViews.Length; index++)
+        {
+            _debug.NameObject(
+                VkObjectType.ImageView,
+                _imageViews[index].Value,
+                $"Swapchain.ImageView[{index}]");
+        }
+
+        if (trianglePipeline is not null)
+        {
+            NamePipeline(trianglePipeline, "Pipeline.Triangle.Generation1");
+        }
+
         _graphSink = new(this);
     }
 
@@ -368,6 +396,9 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
             ?? throw new InvalidOperationException(
                 "This frame graph was created without a triangle pipeline.");
         _trianglePipeline = replacement;
+        NamePipeline(
+            replacement,
+            $"Pipeline.Triangle.Reload{LastSubmittedTimelineValue + 1}");
         return previous;
     }
 
@@ -666,6 +697,20 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
             _ => throw new ArgumentOutOfRangeException(nameof(layout))
         };
 
+    private void NamePipeline(
+        VulkanTrianglePipeline pipeline,
+        string name)
+    {
+        _debug.NameObject(
+            VkObjectType.Pipeline,
+            pipeline.Handle.Value,
+            name);
+        _debug.NameObject(
+            VkObjectType.PipelineLayout,
+            pipeline.Layout.Value,
+            name + ".Layout");
+    }
+
     private sealed class FrameResources(
         VkCommandPool commandPool,
         VkCommandBuffer commandBuffer,
@@ -727,6 +772,9 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
 
         public void BeginPass(CompiledRenderPass pass)
         {
+            _renderer._debug.BeginLabel(
+                _commandBuffer,
+                _renderer._passLabels[pass.OriginalIndex]);
             for (int index = 0; index < pass.Accesses.Count; index++)
             {
                 CompiledResourceAccess access = pass.Accesses[index];
@@ -777,6 +825,8 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
                 _renderer._cmdEndRendering(_commandBuffer);
                 _rendering = false;
             }
+
+            _renderer._debug.EndLabel(_commandBuffer);
         }
     }
 

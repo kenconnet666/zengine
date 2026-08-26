@@ -42,6 +42,9 @@ Status: P1A backend-neutral graph compiler accepted; Vulkan execution and advanc
 - Transactional shader/pipeline replacement at frame boundaries.
 - Timeline-retired old pipelines without `vkDeviceWaitIdle` on the reload path.
 - Structured `Unchanged`, `Applied` and `Rejected` reload results.
+- `VK_EXT_debug_utils` object names for image views, pipeline layouts and pipeline generations.
+- Allocation-free per-pass command labels using pre-encoded compiled pass names.
+- Shared `VkPipelineCache` across resize and shader generations with byte import/export.
 
 ## Validation evidence
 
@@ -60,12 +63,13 @@ Status: P1A backend-neutral graph compiler accepted; Vulkan execution and advanc
 - Allocator hardware test: two upload buffers shared one 16 MiB `VkDeviceMemory` block, mapped writes round-tripped, freed ranges merged and a device-local block stayed unmapped.
 - Pipeline reload hardware test: a second real fragment module advanced shader generation 1 to 2; malformed SPIR-V was rejected and generation 2 rendered another frame.
 - Automated host smoke applies the alternate pipeline, rejects an invalid candidate, then continues resize/minimize/restore rendering with zero validation errors.
+- Debug-label gate: Win32 graph renderer resolved all debug-utils commands and submitted labeled passes without validation errors.
+- Pipeline-cache gate: exported non-empty driver cache data and re-imported it into a second valid cache.
 - `dotnet format ZEngine.slnx --verify-no-changes`: passed.
 
 ## Remaining P1
 
 - Memory-budget telemetry, staging ring and non-coherent host-memory fallback.
 - Descriptor Heap arena/command path and Descriptor Buffer/set fallback implementation.
-- Pipeline cache persistence and development source-file/DXC watcher.
-- Debug labels and RenderDoc capture naming.
+- Development source-file/DXC watcher and atomic cache-file persistence policy.
 - Hardware validation stress tests without a routine `vkDeviceWaitIdle` frame path.

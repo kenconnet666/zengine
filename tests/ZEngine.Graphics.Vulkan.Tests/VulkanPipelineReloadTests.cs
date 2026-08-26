@@ -86,6 +86,13 @@ public sealed class VulkanPipelineReloadTests
             0.07f,
             0.1f));
 
+        byte[] pipelineCacheData = renderer.GetPipelineCacheData();
+        Assert.NotEmpty(pipelineCacheData);
+        using VulkanPipelineCache importedCache = new(
+            device,
+            pipelineCacheData);
+        Assert.NotEmpty(importedCache.Snapshot());
+
         device.WaitIdle();
         Assert.DoesNotContain(
             instance.ValidationMessages,

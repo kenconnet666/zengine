@@ -233,6 +233,15 @@ public sealed unsafe class VulkanDevice : IDisposable
         return GetDeviceProc(_getDeviceProcAddress, _handle, name);
     }
 
+    public nint TryGetProcAddress(ReadOnlySpan<byte> name)
+    {
+        ObjectDisposedException.ThrowIf(_handle.IsNull, this);
+        fixed (byte* pointer = name)
+        {
+            return _getDeviceProcAddress(_handle, pointer);
+        }
+    }
+
     public void Dispose()
     {
         VkDevice handle = _handle;

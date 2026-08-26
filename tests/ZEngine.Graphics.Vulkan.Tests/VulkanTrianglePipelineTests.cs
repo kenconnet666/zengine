@@ -74,6 +74,7 @@ public sealed class VulkanTrianglePipelineTests
                 barrier.SourcePass == "Frame.Triangle"
                 && barrier.DestinationPass == "Frame.Present"
                 && barrier.NewLayout == RenderImageLayout.Present);
+        Assert.True(renderer.DebugLabelsEnabled);
 
         for (int frame = 0; frame < 8; frame++)
         {

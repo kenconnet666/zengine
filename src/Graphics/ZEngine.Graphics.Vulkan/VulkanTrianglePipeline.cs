@@ -25,7 +25,8 @@ public sealed unsafe class VulkanTrianglePipeline : IDisposable
         VulkanDevice device,
         VkFormat colorFormat,
         ReadOnlySpan<byte> vertexShader,
-        ReadOnlySpan<byte> fragmentShader)
+        ReadOnlySpan<byte> fragmentShader,
+        VulkanPipelineCache? pipelineCache = null)
     {
         _device = device;
 
@@ -191,7 +192,7 @@ public sealed unsafe class VulkanTrianglePipeline : IDisposable
                 VulkanException.ThrowIfFailed(
                     createGraphicsPipelines(
                         device.Handle,
-                        default,
+                        pipelineCache?.Handle ?? default,
                         1,
                         &pipelineInfo,
                         null,
@@ -221,6 +222,10 @@ public sealed unsafe class VulkanTrianglePipeline : IDisposable
                 null);
         }
     }
+
+    public VkPipeline Handle => _pipeline;
+
+    public VkPipelineLayout Layout => _layout;
 
     public void Draw(
         VkCommandBuffer commandBuffer,
