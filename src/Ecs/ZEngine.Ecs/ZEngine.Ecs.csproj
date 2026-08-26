@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZEngine.Ecs</RootNamespace>
+    <AssemblyName>ZEngine.Ecs</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Foundation\ZEngine.Core\ZEngine.Core.csproj" />
+  </ItemGroup>
+</Project>
