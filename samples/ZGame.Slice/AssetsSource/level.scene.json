@@ -1,0 +1,9 @@
+{
+  "schema": "zengine.scene/1",
+  "name": "First Slice",
+  "entities": [
+    { "name": "Player", "position": [0, 1, 0] },
+    { "name": "Camera", "position": [0, 4, -8] },
+    { "name": "Sun", "rotation": [35, -20, 0] }
+  ]
+}

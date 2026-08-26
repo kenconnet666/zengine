@@ -1,0 +1,76 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>ZGame.Slice</RootNamespace>
+    <AssemblyName>ZGame.Slice</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ZGame.Slice.Contracts\ZGame.Slice.Contracts.csproj" />
+    <ProjectReference Include="..\ZGame.Slice.UI\ZGame.Slice.UI.csproj" />
+    <ProjectReference Include="..\ZGame.Slice.Gameplay\ZGame.Slice.Gameplay.csproj"
+                      ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\ZGame.Slice.RenderFeature\ZGame.Slice.RenderFeature.csproj"
+                      ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\ZGame.Slice.Director\ZGame.Slice.Director.csproj"
+                      ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\src\Assets\ZEngine.Assets\ZEngine.Assets.csproj" />
+    <ProjectReference Include="..\..\src\Assets\ZEngine.AssetImporters\ZEngine.AssetImporters.csproj" />
+    <ProjectReference Include="..\..\src\Graphics\ZEngine.Graphics.Vulkan\ZEngine.Graphics.Vulkan.csproj" />
+    <ProjectReference Include="..\..\src\Native\ZEngine.Platform.Win32\ZEngine.Platform.Win32.csproj" />
+    <ProjectReference Include="..\..\src\Plugins\ZEngine.Plugins.Runtime\ZEngine.Plugins.Runtime.csproj" />
+    <ProjectReference Include="..\..\src\UI\Zui.Backend.Vulkan\Zui.Backend.Vulkan.csproj" />
+    <ProjectReference Include="..\..\src\UI\Zui.Rendering\Zui.Rendering.csproj" />
+    <ProjectReference Include="..\..\src\UI\Zui.Platform.Windows\Zui.Platform.Windows.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="AssetsSource\**\*"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\shaders\compiled\triangle.vert.spv"
+             Link="Shaders\triangle.vert.spv"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\shaders\compiled\triangle.frag.spv"
+             Link="Shaders\triangle.frag.spv"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\shaders\compiled\ui.vert.spv"
+             Link="Shaders\ui.vert.spv"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\shaders\compiled\ui.frag.spv"
+             Link="Shaders\ui.frag.spv"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Target Name="CopySlicePlugins" AfterTargets="Build">
+    <ItemGroup>
+      <GameplayPluginFiles Include="..\ZGame.Slice.Gameplay\bin\$(Configuration)\$(TargetFramework)\**\*.*" />
+      <RenderPluginFiles Include="..\ZGame.Slice.RenderFeature\bin\$(Configuration)\$(TargetFramework)\**\*.*" />
+      <DirectorPluginFiles Include="..\ZGame.Slice.Director\bin\$(Configuration)\$(TargetFramework)\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(GameplayPluginFiles)"
+          DestinationFiles="@(GameplayPluginFiles->'$(OutDir)Plugins\gameplay\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(RenderPluginFiles)"
+          DestinationFiles="@(RenderPluginFiles->'$(OutDir)Plugins\render\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(DirectorPluginFiles)"
+          DestinationFiles="@(DirectorPluginFiles->'$(OutDir)Plugins\director\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+
+  <Target Name="CopySlicePluginsToPublish" AfterTargets="Publish">
+    <ItemGroup>
+      <GameplayPublishFiles Include="..\ZGame.Slice.Gameplay\bin\$(Configuration)\$(TargetFramework)\**\*.*" />
+      <RenderPublishFiles Include="..\ZGame.Slice.RenderFeature\bin\$(Configuration)\$(TargetFramework)\**\*.*" />
+      <DirectorPublishFiles Include="..\ZGame.Slice.Director\bin\$(Configuration)\$(TargetFramework)\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(GameplayPublishFiles)"
+          DestinationFiles="@(GameplayPublishFiles->'$(PublishDir)Plugins\gameplay\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(RenderPublishFiles)"
+          DestinationFiles="@(RenderPublishFiles->'$(PublishDir)Plugins\render\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(DirectorPublishFiles)"
+          DestinationFiles="@(DirectorPublishFiles->'$(PublishDir)Plugins\director\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+</Project>

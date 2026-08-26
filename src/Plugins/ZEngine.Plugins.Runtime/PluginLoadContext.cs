@@ -41,7 +41,20 @@ internal sealed class PluginLoadContext : AssemblyLoadContext
         }
 
         string? path = _resolver.ResolveAssemblyToPath(assemblyName);
-        return path is null ? null : LoadFromAssemblyPath(path);
+        if (path is null)
+        {
+            return null;
+        }
+
+        using FileStream assemblyStream = File.OpenRead(path);
+        string symbolsPath = Path.ChangeExtension(path, ".pdb");
+        if (File.Exists(symbolsPath))
+        {
+            using FileStream symbolsStream = File.OpenRead(symbolsPath);
+            return LoadFromStream(assemblyStream, symbolsStream);
+        }
+
+        return LoadFromStream(assemblyStream);
     }
 
     protected override nint LoadUnmanagedDll(string unmanagedDllName)

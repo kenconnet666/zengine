@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZGame.Slice.Contracts</RootNamespace>
+    <AssemblyName>ZGame.Slice.Contracts</AssemblyName>
+  </PropertyGroup>
+</Project>

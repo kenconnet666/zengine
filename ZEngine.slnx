@@ -35,6 +35,12 @@
     <Project Path="samples/UiLab.Native/UiLab.Native.csproj" />
     <Project Path="samples/ZEngine.PlayProbe/ZEngine.PlayProbe.csproj" />
     <Project Path="samples/EditorLab.Native/EditorLab.Native.csproj" />
+    <Project Path="samples/ZGame.Slice.Contracts/ZGame.Slice.Contracts.csproj" />
+    <Project Path="samples/ZGame.Slice.Gameplay/ZGame.Slice.Gameplay.csproj" />
+    <Project Path="samples/ZGame.Slice.RenderFeature/ZGame.Slice.RenderFeature.csproj" />
+    <Project Path="samples/ZGame.Slice.Director/ZGame.Slice.Director.csproj" />
+    <Project Path="samples/ZGame.Slice.UI/ZGame.Slice.UI.csproj" />
+    <Project Path="samples/ZGame.Slice/ZGame.Slice.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/ZEngine.Vulkan.Registry.Tests/ZEngine.Vulkan.Registry.Tests.csproj" />
@@ -49,6 +55,7 @@
     <Project Path="tests/ZEngine.Agent.Tests/ZEngine.Agent.Tests.csproj" />
     <Project Path="tests/ZEngine.Assets.Tests/ZEngine.Assets.Tests.csproj" />
     <Project Path="tests/ZEngine.Editor.Tests/ZEngine.Editor.Tests.csproj" />
+    <Project Path="tests/ZGame.Slice.Tests/ZGame.Slice.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/fixtures/">
     <Project Path="tests/Fixtures/ZEngine.CounterPlugin.Contracts/ZEngine.CounterPlugin.Contracts.csproj" />

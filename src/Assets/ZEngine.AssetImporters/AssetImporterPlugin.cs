@@ -10,6 +10,7 @@ public sealed class AssetImporterPlugin : EnginePlugin
         AssetImporterRegistry registry = scope.Require<AssetImporterRegistry>();
         scope.Own(registry.Register(new SpirvShaderImporter()));
         scope.Own(registry.Register(new PngTextureImporter()));
+        scope.Own(registry.Register(new PpmTextureImporter()));
         scope.Own(registry.Register(new JsonSceneImporter()));
     }
 }

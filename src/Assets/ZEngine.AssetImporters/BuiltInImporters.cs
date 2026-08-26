@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Text.Json;
+using System.Text;
 using ZEngine.Assets;
 
 namespace ZEngine.AssetImporters;
@@ -56,6 +57,49 @@ public sealed class PngTextureImporter : IAssetImporter
         }
 
         return new(source, "image/png");
+    }
+}
+
+public sealed class PpmTextureImporter : IAssetImporter
+{
+    public string Id => "zengine.texture.ppm";
+
+    public string Version => "1.0.0";
+
+    public async ValueTask<AssetImportResult> ImportAsync(
+        AssetImportContext context,
+        CancellationToken cancellationToken)
+    {
+        byte[] source = await context.ReadSourceAsync(cancellationToken);
+        string text = Encoding.ASCII.GetString(source);
+        string[] tokens = text.Split(
+            (char[]?)null,
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (tokens.Length < 7
+            || tokens[0] != "P3"
+            || !int.TryParse(tokens[1], out int width)
+            || !int.TryParse(tokens[2], out int height)
+            || !int.TryParse(tokens[3], out int maximum)
+            || width <= 0
+            || height <= 0
+            || maximum is <= 0 or > 65535
+            || tokens.Length != 4 + checked(width * height * 3))
+        {
+            throw new InvalidDataException(
+                $"'{context.SourcePath}' is not a supported ASCII PPM texture.");
+        }
+
+        for (int index = 4; index < tokens.Length; index++)
+        {
+            if (!int.TryParse(tokens[index], out int sample)
+                || sample < 0
+                || sample > maximum)
+            {
+                throw new InvalidDataException("PPM contains an invalid color sample.");
+            }
+        }
+
+        return new(source, "image/x-portable-pixmap");
     }
 }
 

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZGame.Slice.UI</RootNamespace>
+    <AssemblyName>ZGame.Slice.UI</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ZGame.Slice.Contracts\ZGame.Slice.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\UI\Zui.Basic\Zui.Basic.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZGame.Slice.Director</RootNamespace>
+    <AssemblyName>ZGame.Slice.Director</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ZGame.Slice.Contracts\ZGame.Slice.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\Plugins\ZEngine.Plugins.Abstractions\ZEngine.Plugins.Abstractions.csproj" />
+  </ItemGroup>
+</Project>
