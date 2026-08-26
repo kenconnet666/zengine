@@ -11,6 +11,7 @@
     <Project Path="src/Graphics/ZEngine.Graphics.Vulkan/ZEngine.Graphics.Vulkan.csproj" />
     <Project Path="src/Graphics/ZEngine.RenderGraph/ZEngine.RenderGraph.csproj" />
     <Project Path="src/Ecs/ZEngine.Ecs/ZEngine.Ecs.csproj" />
+    <Project Path="src/Jobs/ZEngine.Jobs/ZEngine.Jobs.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/HelloZEngine/HelloZEngine.csproj" />
@@ -21,5 +22,6 @@
     <Project Path="tests/ZEngine.Graphics.Vulkan.Tests/ZEngine.Graphics.Vulkan.Tests.csproj" />
     <Project Path="tests/ZEngine.RenderGraph.Tests/ZEngine.RenderGraph.Tests.csproj" />
     <Project Path="tests/ZEngine.Ecs.Tests/ZEngine.Ecs.Tests.csproj" />
+    <Project Path="tests/ZEngine.Jobs.Tests/ZEngine.Jobs.Tests.csproj" />
   </Folder>
 </Solution>

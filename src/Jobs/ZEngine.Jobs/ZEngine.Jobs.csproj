@@ -1,11 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <RootNamespace>ZEngine.Ecs</RootNamespace>
-    <AssemblyName>ZEngine.Ecs</AssemblyName>
+    <RootNamespace>ZEngine.Jobs</RootNamespace>
+    <AssemblyName>ZEngine.Jobs</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Foundation\ZEngine.Core\ZEngine.Core.csproj" />
-    <ProjectReference Include="..\..\Jobs\ZEngine.Jobs\ZEngine.Jobs.csproj" />
   </ItemGroup>
 </Project>

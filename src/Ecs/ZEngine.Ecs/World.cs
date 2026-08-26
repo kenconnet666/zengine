@@ -145,7 +145,6 @@ public sealed class World
         where TAccess1 : struct, IComponentAccess
         where TAccess2 : struct, IComponentAccess
     {
-        EnsureOwnerThread();
         return new(this);
     }
 
