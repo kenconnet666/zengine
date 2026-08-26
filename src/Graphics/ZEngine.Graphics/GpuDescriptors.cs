@@ -123,12 +123,20 @@ public enum GpuMemoryClass
     Readback
 }
 
+[Flags]
+public enum GpuAllocationFlags
+{
+    None = 0,
+    DeviceAddress = 1 << 0
+}
+
 public readonly record struct GpuAllocationRequest(
     ulong Size,
     ulong Alignment,
     GpuMemoryClass MemoryClass,
     bool Transient,
-    uint CompatibleMemoryTypes = uint.MaxValue);
+    uint CompatibleMemoryTypes = uint.MaxValue,
+    GpuAllocationFlags Flags = GpuAllocationFlags.None);
 
 public readonly record struct GpuAllocation(
     ulong Offset,

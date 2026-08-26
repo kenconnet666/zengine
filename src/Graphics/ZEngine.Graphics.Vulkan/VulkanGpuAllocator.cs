@@ -69,6 +69,8 @@ public sealed unsafe class VulkanGpuAllocator : IGpuAllocator, IDisposable
             foreach (MemoryBlock candidate in _blocks)
             {
                 if (candidate.MemoryTypeIndex == memoryTypeIndex
+                    && candidate.DeviceAddress
+                    == ((request.Flags & GpuAllocationFlags.DeviceAddress) != 0)
                     && !candidate.Dedicated
                     && candidate.TryAllocate(
                         request.Size,
@@ -88,7 +90,8 @@ public sealed unsafe class VulkanGpuAllocator : IGpuAllocator, IDisposable
         MemoryBlock block = CreateBlock(
             memoryTypeIndex,
             blockSize,
-            dedicated);
+            dedicated,
+            (request.Flags & GpuAllocationFlags.DeviceAddress) != 0);
         _blocks.Add(block);
         if (!block.TryAllocate(
                 request.Size,
@@ -137,11 +140,20 @@ public sealed unsafe class VulkanGpuAllocator : IGpuAllocator, IDisposable
     private MemoryBlock CreateBlock(
         uint memoryTypeIndex,
         ulong size,
-        bool dedicated)
+        bool dedicated,
+        bool deviceAddress)
     {
+        VkMemoryAllocateFlagsInfo flagsInfo = new()
+        {
+            SType = VkStructureType.MemoryAllocateFlagsInfo,
+            Flags = deviceAddress
+                ? VkMemoryAllocateFlags.DeviceAddress
+                : VkMemoryAllocateFlags.None
+        };
         VkMemoryAllocateInfo allocateInfo = new()
         {
             SType = VkStructureType.MemoryAllocateInfo,
+            PNext = deviceAddress ? &flagsInfo : null,
             AllocationSize = size,
             MemoryTypeIndex = memoryTypeIndex
         };
@@ -186,7 +198,8 @@ public sealed unsafe class VulkanGpuAllocator : IGpuAllocator, IDisposable
             size,
             properties,
             mappedAddress,
-            dedicated);
+            dedicated,
+            deviceAddress);
     }
 
     private void DestroyBlock(MemoryBlock block)
@@ -283,7 +296,8 @@ public sealed unsafe class VulkanGpuAllocator : IGpuAllocator, IDisposable
             ulong size,
             VkMemoryPropertyFlags properties,
             nint mappedAddress,
-            bool dedicated)
+            bool dedicated,
+            bool deviceAddress)
         {
             Memory = memory;
             MemoryTypeIndex = memoryTypeIndex;
@@ -291,6 +305,7 @@ public sealed unsafe class VulkanGpuAllocator : IGpuAllocator, IDisposable
             Properties = properties;
             MappedAddress = mappedAddress;
             Dedicated = dedicated;
+            DeviceAddress = deviceAddress;
             _freeRanges = [new(0, size)];
         }
 
@@ -305,6 +320,8 @@ public sealed unsafe class VulkanGpuAllocator : IGpuAllocator, IDisposable
         public nint MappedAddress { get; }
 
         public bool Dedicated { get; }
+
+        public bool DeviceAddress { get; }
 
         public Dictionary<ulong, ulong> LiveAllocations { get; } = [];
 

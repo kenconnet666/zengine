@@ -81,12 +81,20 @@ public sealed unsafe class VulkanDevice : IDisposable
                 : support.DescriptorBuffer && support.BufferDeviceAddress
                     ? VulkanDescriptorBindingModel.DescriptorBuffer
                     : VulkanDescriptorBindingModel.DescriptorSets;
+        VulkanDescriptorHeapProperties? descriptorHeapProperties =
+            descriptorModel == VulkanDescriptorBindingModel.DescriptorHeap
+                ? QueryDescriptorHeapProperties(
+                    loader,
+                    instance,
+                    physicalDevice.Handle)
+                : null;
         VulkanDeviceCapabilities capabilities = new(
             support.DynamicRenderingLocalRead,
             support.DescriptorBuffer,
             support.DescriptorHeap,
             support.BufferDeviceAddress,
-            descriptorModel);
+            descriptorModel,
+            descriptorHeapProperties);
 
         ReadOnlySpan<byte> swapchainName = "VK_KHR_swapchain\0"u8;
         ReadOnlySpan<byte> descriptorBufferName = "VK_EXT_descriptor_buffer\0"u8;
@@ -145,8 +153,9 @@ public sealed unsafe class VulkanDevice : IDisposable
             VkPhysicalDeviceBufferDeviceAddressFeatures bufferAddressFeatures = new()
             {
                 SType = VkStructureType.PhysicalDeviceBufferDeviceAddressFeatures,
-                BufferDeviceAddress = descriptorModel
-                    == VulkanDescriptorBindingModel.DescriptorBuffer
+                BufferDeviceAddress = descriptorModel is
+                    VulkanDescriptorBindingModel.DescriptorBuffer
+                    or VulkanDescriptorBindingModel.DescriptorHeap
                     ? 1u
                     : 0u
             };
@@ -184,7 +193,8 @@ public sealed unsafe class VulkanDevice : IDisposable
             }
             else if (descriptorModel == VulkanDescriptorBindingModel.DescriptorHeap)
             {
-                descriptorHeapFeatures.PNext = featureChain;
+                bufferAddressFeatures.PNext = featureChain;
+                descriptorHeapFeatures.PNext = &bufferAddressFeatures;
                 featureChain = &descriptorHeapFeatures;
             }
 
@@ -352,4 +362,38 @@ public sealed unsafe class VulkanDevice : IDisposable
         bool DescriptorBuffer,
         bool DescriptorHeap,
         bool BufferDeviceAddress);
+
+    private static VulkanDescriptorHeapProperties QueryDescriptorHeapProperties(
+        VulkanLoader loader,
+        VkInstance instance,
+        VkPhysicalDevice physicalDevice)
+    {
+        nint proc = loader.GetInstanceProcAddress(
+            instance,
+            "vkGetPhysicalDeviceProperties2\0"u8);
+        if (proc == 0)
+        {
+            throw new MissingMethodException(
+                "The Vulkan instance does not expose vkGetPhysicalDeviceProperties2.");
+        }
+
+        var getProperties =
+            (delegate* unmanaged<VkPhysicalDevice, VkPhysicalDeviceProperties2Buffer*, void>)proc;
+        VkPhysicalDeviceDescriptorHeapPropertiesExt descriptorProperties = new()
+        {
+            SType = VkStructureType.PhysicalDeviceDescriptorHeapPropertiesExt
+        };
+        VkPhysicalDeviceProperties2Buffer properties = new()
+        {
+            SType = VkStructureType.PhysicalDeviceProperties2,
+            PNext = &descriptorProperties
+        };
+        getProperties(physicalDevice, &properties);
+        return new(
+            descriptorProperties.ResourceHeapAlignment,
+            descriptorProperties.MaxResourceHeapSize,
+            descriptorProperties.MinResourceHeapReservedRange,
+            descriptorProperties.BufferDescriptorSize,
+            descriptorProperties.BufferDescriptorAlignment);
+    }
 }

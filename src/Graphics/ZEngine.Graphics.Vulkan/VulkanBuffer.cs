@@ -87,7 +87,11 @@ public sealed unsafe class VulkanBuffer : IDisposable
                     requirements.Alignment,
                     memoryClass,
                     Transient: false,
-                    requirements.MemoryTypeBits));
+                    requirements.MemoryTypeBits,
+                    (usage & (VkBufferUsageFlags.ShaderDeviceAddress
+                              | VkBufferUsageFlags.DescriptorHeapExt)) != 0
+                        ? GpuAllocationFlags.DeviceAddress
+                        : GpuAllocationFlags.None));
             VulkanException.ThrowIfFailed(
                 bindMemory(
                     device.Handle,

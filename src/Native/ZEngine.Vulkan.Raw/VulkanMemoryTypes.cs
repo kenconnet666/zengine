@@ -41,6 +41,15 @@ public enum VkBufferUsageFlags : uint
     DescriptorHeapExt = 0x10000000
 }
 
+[Flags]
+public enum VkMemoryAllocateFlags : uint
+{
+    None = 0,
+    DeviceMask = 0x00000001,
+    DeviceAddress = 0x00000002,
+    DeviceAddressCaptureReplay = 0x00000004
+}
+
 [StructLayout(LayoutKind.Sequential)]
 public struct VkMemoryType
 {
@@ -104,6 +113,23 @@ public unsafe struct VkMemoryAllocateInfo
     public void* PNext;
     public ulong AllocationSize;
     public uint MemoryTypeIndex;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct VkMemoryAllocateFlagsInfo
+{
+    public VkStructureType SType;
+    public void* PNext;
+    public VkMemoryAllocateFlags Flags;
+    public uint DeviceMask;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct VkBufferDeviceAddressInfo
+{
+    public VkStructureType SType;
+    public void* PNext;
+    public VkBuffer Buffer;
 }
 
 public static class VulkanHandleConversions

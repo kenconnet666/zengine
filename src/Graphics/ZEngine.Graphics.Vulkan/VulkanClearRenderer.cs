@@ -18,6 +18,7 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
     private readonly FrameGraphSink _graphSink;
     private readonly VulkanDebugUtilities _debug;
     private readonly byte[][] _passLabels;
+    private readonly VulkanDescriptorHeap? _descriptorHeap;
     private readonly VkImageView[] _imageViews;
     private readonly bool[] _initializedImages;
     private readonly delegate* unmanaged<VkDevice, VkImageView, void*, void>
@@ -60,14 +61,18 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
 
     public bool DebugLabelsEnabled => _debug.IsEnabled;
 
+    public bool UsesDescriptorHeap => _descriptorHeap is not null;
+
     public VulkanClearRenderer(
         VulkanDevice device,
         VulkanSwapchain swapchain,
-        VulkanTrianglePipeline? trianglePipeline = null)
+        VulkanTrianglePipeline? trianglePipeline = null,
+        VulkanDescriptorHeap? descriptorHeap = null)
     {
         _device = device;
         _swapchain = swapchain;
         _trianglePipeline = trianglePipeline;
+        _descriptorHeap = descriptorHeap;
         _timeline = device.CreateTimeline();
 
         var createImageView =
@@ -291,6 +296,7 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
         VulkanException.ThrowIfFailed(
             _beginCommandBuffer(frame.CommandBuffer, &beginInfo),
             "vkBeginCommandBuffer");
+        _descriptorHeap?.Bind(frame.CommandBuffer);
 
         _graphSink.BeginFrame(
             frame.CommandBuffer,

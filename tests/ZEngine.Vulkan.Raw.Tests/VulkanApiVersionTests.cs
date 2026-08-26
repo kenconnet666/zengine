@@ -80,6 +80,11 @@ public sealed class VulkanApiVersionTests
             Assert.Equal(
                 VulkanDescriptorBindingModel.DescriptorHeap,
                 device.Capabilities.DescriptorBindingModel);
+            VulkanDescriptorHeapProperties properties =
+                Assert.IsType<VulkanDescriptorHeapProperties>(
+                    device.Capabilities.DescriptorHeapProperties);
+            Assert.True(properties.ResourceHeapAlignment > 0);
+            Assert.True(properties.MaxResourceHeapSize > 0);
         }
     }
 

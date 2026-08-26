@@ -18,6 +18,8 @@ public sealed class VulkanWindowRenderer : IDisposable
     private byte[] _vertexShaderHash;
     private byte[] _fragmentShaderHash;
     private readonly VulkanPipelineCache _pipelineCache;
+    private readonly VulkanGpuAllocator _allocator;
+    private readonly VulkanDescriptorHeap? _descriptorHeap;
     private VulkanSwapchain? _swapchain;
     private VulkanTrianglePipeline? _pipeline;
     private VulkanClearRenderer? _renderer;
@@ -43,6 +45,20 @@ public sealed class VulkanWindowRenderer : IDisposable
         _physicalDevice = physicalDevice;
         _surface = surface;
         _pipelineCache = new(device, initialPipelineCache);
+        _allocator = new(device, physicalDevice.MemoryProperties);
+        try
+        {
+            _descriptorHeap = device.Capabilities.DescriptorBindingModel
+                == VulkanDescriptorBindingModel.DescriptorHeap
+                ? new(device, _allocator)
+                : null;
+        }
+        catch
+        {
+            _allocator.Dispose();
+            _pipelineCache.Dispose();
+            throw;
+        }
         _vertexShader = vertexShader.ToArray();
         _fragmentShader = fragmentShader.ToArray();
         _vertexShaderHash = SHA256.HashData(vertexShader);
@@ -59,6 +75,11 @@ public sealed class VulkanWindowRenderer : IDisposable
     public CompiledRenderGraph? FrameGraph => _renderer?.FrameGraph;
 
     public byte[] GetPipelineCacheData() => _pipelineCache.Snapshot();
+
+    public VulkanDescriptorBindingModel DescriptorBindingModel =>
+        _device.Capabilities.DescriptorBindingModel;
+
+    public ulong DescriptorHeapSize => _descriptorHeap?.Size ?? 0;
 
     public bool Prepare(
         uint requestedWidth,
@@ -193,6 +214,8 @@ public sealed class VulkanWindowRenderer : IDisposable
 
         _disposed = true;
         DestroyGeneration();
+        _descriptorHeap?.Dispose();
+        _allocator.Dispose();
         _pipelineCache.Dispose();
     }
 
@@ -214,7 +237,11 @@ public sealed class VulkanWindowRenderer : IDisposable
                 _vertexShader,
                 _fragmentShader,
                 _pipelineCache);
-            renderer = new(_device, swapchain, pipeline);
+            renderer = new(
+                _device,
+                swapchain,
+                pipeline,
+                _descriptorHeap);
         }
         catch
         {

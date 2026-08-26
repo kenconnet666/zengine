@@ -45,6 +45,7 @@ Status: P1A backend-neutral graph compiler accepted; Vulkan execution and advanc
 - `VK_EXT_debug_utils` object names for image views, pipeline layouts and pipeline generations.
 - Allocation-free per-pass command labels using pre-encoded compiled pass names.
 - Shared `VkPipelineCache` across resize and shader generations with byte import/export.
+- Descriptor Heap property query, device-address allocation, persistently mapped 1 MiB resource heap and per-frame `vkCmdBindResourceHeapEXT`.
 
 ## Validation evidence
 
@@ -65,11 +66,12 @@ Status: P1A backend-neutral graph compiler accepted; Vulkan execution and advanc
 - Automated host smoke applies the alternate pipeline, rejects an invalid candidate, then continues resize/minimize/restore rendering with zero validation errors.
 - Debug-label gate: Win32 graph renderer resolved all debug-utils commands and submitted labeled passes without validation errors.
 - Pipeline-cache gate: exported non-empty driver cache data and re-imported it into a second valid cache.
+- Descriptor Heap gate: queried non-zero alignment/maximums, created a buffer with address allocation flags, obtained a non-zero GPU address and bound it on every validated frame.
 - `dotnet format ZEngine.slnx --verify-no-changes`: passed.
 
 ## Remaining P1
 
 - Memory-budget telemetry, staging ring and non-coherent host-memory fallback.
-- Descriptor Heap arena/command path and Descriptor Buffer/set fallback implementation.
+- Actual resource-descriptor writes plus Descriptor Buffer/set command fallbacks.
 - Development source-file/DXC watcher and atomic cache-file persistence policy.
 - Hardware validation stress tests without a routine `vkDeviceWaitIdle` frame path.

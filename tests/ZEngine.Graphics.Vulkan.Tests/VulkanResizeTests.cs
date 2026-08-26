@@ -50,6 +50,11 @@ public sealed class VulkanResizeTests
             surface,
             vertexShader,
             fragmentShader);
+        if (device.Capabilities.DescriptorBindingModel
+            == VulkanDescriptorBindingModel.DescriptorHeap)
+        {
+            Assert.True(renderer.DescriptorHeapSize > 0);
+        }
 
         WindowSize initial = window.ClientSize;
         Assert.True(renderer.RenderFrame(

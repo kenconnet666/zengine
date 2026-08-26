@@ -66,4 +66,5 @@ public sealed record VulkanDeviceCapabilities(
     bool DescriptorBuffer,
     bool DescriptorHeap,
     bool BufferDeviceAddress,
-    VulkanDescriptorBindingModel DescriptorBindingModel);
+    VulkanDescriptorBindingModel DescriptorBindingModel,
+    VulkanDescriptorHeapProperties? DescriptorHeapProperties);

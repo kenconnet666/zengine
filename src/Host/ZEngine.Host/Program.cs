@@ -263,5 +263,6 @@ static void PrintCapabilities(VulkanDeviceCapabilities capabilities)
         + $"descriptorBuffer={capabilities.DescriptorBuffer}, "
         + $"descriptorHeap={capabilities.DescriptorHeap}, "
         + $"bufferDeviceAddress={capabilities.BufferDeviceAddress}, "
-        + $"bindingModel={capabilities.DescriptorBindingModel}.");
+        + $"bindingModel={capabilities.DescriptorBindingModel}, "
+        + $"resourceHeapAlignment={capabilities.DescriptorHeapProperties?.ResourceHeapAlignment ?? 0}.");
 }
