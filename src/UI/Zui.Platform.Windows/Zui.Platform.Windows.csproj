@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZEngine.UI.Windows</RootNamespace>
+    <AssemblyName>Zui.Platform.Windows</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Zui.Core\Zui.Core.csproj" />
+  </ItemGroup>
+</Project>

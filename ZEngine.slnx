@@ -15,9 +15,16 @@
     <Project Path="src/Generators/ZEngine.Ecs.Generators/ZEngine.Ecs.Generators.csproj" />
     <Project Path="src/Plugins/ZEngine.Plugins.Abstractions/ZEngine.Plugins.Abstractions.csproj" />
     <Project Path="src/Plugins/ZEngine.Plugins.Runtime/ZEngine.Plugins.Runtime.csproj" />
+    <Project Path="src/UI/Zui.Core/Zui.Core.csproj" />
+    <Project Path="src/UI/Zui.Basic/Zui.Basic.csproj" />
+    <Project Path="src/UI/Zui.Backend.Blazor/Zui.Backend.Blazor.csproj" />
+    <Project Path="src/UI/Zui.Rendering/Zui.Rendering.csproj" />
+    <Project Path="src/UI/Zui.Platform.Windows/Zui.Platform.Windows.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/HelloZEngine/HelloZEngine.csproj" />
+    <Project Path="samples/UiLab.Shared/UiLab.Shared.csproj" />
+    <Project Path="samples/UiLab.Web/UiLab.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/ZEngine.Vulkan.Registry.Tests/ZEngine.Vulkan.Registry.Tests.csproj" />
@@ -28,6 +35,7 @@
     <Project Path="tests/ZEngine.Jobs.Tests/ZEngine.Jobs.Tests.csproj" />
     <Project Path="tests/ZEngine.Ecs.Generators.Tests/ZEngine.Ecs.Generators.Tests.csproj" />
     <Project Path="tests/ZEngine.Plugins.Tests/ZEngine.Plugins.Tests.csproj" />
+    <Project Path="tests/ZEngine.UI.Tests/ZEngine.UI.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/fixtures/">
     <Project Path="tests/Fixtures/ZEngine.CounterPlugin.Contracts/ZEngine.CounterPlugin.Contracts.csproj" />

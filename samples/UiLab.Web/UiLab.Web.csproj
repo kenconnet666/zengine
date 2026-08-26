@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>UiLab.Web</RootNamespace>
+    <AssemblyName>UiLab.Web</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer"
+                      PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\UiLab.Shared\UiLab.Shared.csproj" />
+    <ProjectReference Include="..\..\src\UI\Zui.Backend.Blazor\Zui.Backend.Blazor.csproj" />
+  </ItemGroup>
+</Project>

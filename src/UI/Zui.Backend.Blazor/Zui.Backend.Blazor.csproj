@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZEngine.UI.Blazor</RootNamespace>
+    <AssemblyName>Zui.Backend.Blazor</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+    <ProjectReference Include="..\Zui.Core\Zui.Core.csproj" />
+  </ItemGroup>
+</Project>

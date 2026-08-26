@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>ZEngine.UI.Tests</RootNamespace>
+    <AssemblyName>ZEngine.UI.Tests</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\samples\UiLab.Shared\UiLab.Shared.csproj" />
+    <ProjectReference Include="..\..\src\UI\Zui.Backend.Blazor\Zui.Backend.Blazor.csproj" />
+    <ProjectReference Include="..\..\src\UI\Zui.Rendering\Zui.Rendering.csproj" />
+    <ProjectReference Include="..\..\src\UI\Zui.Platform.Windows\Zui.Platform.Windows.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>UiLab.Shared</RootNamespace>
+    <AssemblyName>UiLab.Shared</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\UI\Zui.Basic\Zui.Basic.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,18 @@
+html, body, #app {
+    min-height: 100%;
+    margin: 0;
+}
+
+body {
+    background: #0d1118;
+    font-family: system-ui, "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+}
+
+button, input {
+    box-sizing: border-box;
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZEngine.UI</RootNamespace>
+    <AssemblyName>Zui.Core</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>Zui.Basic</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>
