@@ -58,6 +58,35 @@ public sealed class PluginGraphTests
         Assert.Contains("C", cycle.Message);
     }
 
+    [Fact]
+    public void CreatesRoundTripsAndValidatesExactPluginLock()
+    {
+        PluginPackage[] packages =
+            PluginRuntimeTests.CreateCounterPackageSetForLock();
+        PluginLockFile created = PluginLockFile.Create(packages);
+        using MemoryStream stream = new();
+        created.Save(stream);
+        stream.Position = 0;
+        PluginLockFile loaded = PluginLockFile.Load(stream);
+
+        loaded.Validate(packages);
+        PluginLockEntry entry = Assert.Single(loaded.Plugins);
+        Assert.Equal("zengine.tests.counter", entry.Id);
+        Assert.Equal(64, entry.ContentSha256.Length);
+
+        PluginLockFile tampered = loaded with
+        {
+            Plugins =
+            [
+                entry with
+                {
+                    ContentSha256 = new string('0', 64)
+                }
+            ]
+        };
+        Assert.Throws<InvalidDataException>(() => tampered.Validate(packages));
+    }
+
     private static int IndexOf(PluginGraphPlan plan, string id) =>
         plan.ActivationOrder
             .Select((manifest, index) => (manifest, index))

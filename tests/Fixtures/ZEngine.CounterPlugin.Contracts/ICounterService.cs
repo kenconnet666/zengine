@@ -6,6 +6,8 @@ public interface ICounterService
 
     bool IsDisposed { get; }
 
+    bool ResourceRetired { get; }
+
     Task WorkStarted { get; }
 
     void StartBlockingWork();

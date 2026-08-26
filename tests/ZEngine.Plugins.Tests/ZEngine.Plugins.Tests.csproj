@@ -16,5 +16,8 @@
     <ProjectReference Include="..\Fixtures\ZEngine.CounterPlugin.Contracts\ZEngine.CounterPlugin.Contracts.csproj" />
     <ProjectReference Include="..\Fixtures\ZEngine.CounterPlugin.Runtime\ZEngine.CounterPlugin.Runtime.csproj"
                       ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\ZEngine.ChainPlugin.Contracts\ZEngine.ChainPlugin.Contracts.csproj" />
+    <ProjectReference Include="..\Fixtures\ZEngine.ChainPlugin.Runtime\ZEngine.ChainPlugin.Runtime.csproj"
+                      ReferenceOutputAssembly="false" />
   </ItemGroup>
 </Project>

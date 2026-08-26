@@ -12,6 +12,7 @@ public sealed class CounterPlugin : EnginePlugin
     {
         _service = new(scope);
         scope.Export<ICounterService>(_service);
+        scope.Retire(new Retirement(_service));
     }
 
     public override void SaveHotState(HotStateWriter state) =>
@@ -36,6 +37,8 @@ public sealed class CounterPlugin : EnginePlugin
 
         public bool IsDisposed { get; private set; }
 
+        public bool ResourceRetired { get; set; }
+
         public Task WorkStarted => _started.Task;
 
         public void StartBlockingWork() =>
@@ -59,6 +62,15 @@ public sealed class CounterPlugin : EnginePlugin
                     [service._release.WaitHandle, context.CancellationToken.WaitHandle]);
                 context.CancellationToken.ThrowIfCancellationRequested();
             }
+        }
+    }
+
+    private sealed class Retirement(CounterService service) : IPluginRetirement
+    {
+        public async ValueTask RetireAsync()
+        {
+            await Task.Yield();
+            service.ResourceRetired = true;
         }
     }
 }

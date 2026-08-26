@@ -66,6 +66,7 @@ public sealed class PluginRuntimeTests
             PluginReloadResult result = await reload;
 
             Assert.Equal(PluginReloadStatus.Applied, result.Status);
+            Assert.True(oldService.ResourceRetired);
             Assert.True(oldService.IsDisposed);
             oldService = null!;
             DisposeRuntime(runtime);
@@ -139,6 +140,9 @@ public sealed class PluginRuntimeTests
             [typeof(ICounterService).FullName!]);
         return new(manifest, sourceDirectory);
     }
+
+    internal static PluginPackage[] CreateCounterPackageSetForLock() =>
+        [CounterPackage()];
 
     private static string NewGenerationRoot()
     {

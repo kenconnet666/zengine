@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZEngine.ChainPlugin.Contracts</RootNamespace>
+    <AssemblyName>ZEngine.ChainPlugin.Contracts</AssemblyName>
+  </PropertyGroup>
+</Project>

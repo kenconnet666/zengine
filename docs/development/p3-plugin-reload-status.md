@@ -1,6 +1,6 @@
 # P3 Plugin Reload Status
 
-Status: P3A single-plugin R1 runtime and dependency graph accepted; multi-plugin closure transaction remains in progress.
+Status: P3 Plugin Reload Lab accepted for trusted managed desktop plugins.
 
 ## Implemented
 
@@ -21,6 +21,11 @@ Status: P3A single-plugin R1 runtime and dependency graph accepted; multi-plugin
 - Pre-swap rejection and post-swap probation rollback.
 - WeakReference ALC collection diagnostics.
 - Stream-based DLL/PDB shadow loading so immutable generation files are not mapped/locked.
+- PluginSetRuntime closure staging with staged provider exports injected into dependent scopes.
+- Atomic A/B/C registry swap while independent D keeps the same service instance.
+- Whole-closure staging rejection and probation rollback.
+- Deterministic `plugin.lock.json` model with exact versions, required edges and entry-DLL SHA-256.
+- Asynchronous scoped retirement hook after plugin jobs drain and before service disposal.
 
 ## Validation targets
 
@@ -38,11 +43,14 @@ Status: P3A single-plugin R1 runtime and dependency graph accepted; multi-plugin
 - Missing entry type rejects staging without changing the active generation.
 - Probation rejection restores the exact previous service/registry.
 - Reload remains pending while a plugin-owned blocking job runs, then completes after release and scope disposal.
-- 1,000 immutable generation stages and real collectible ALC reloads passed in 70.114 seconds; all 1,001 unloaded-context WeakReferences were dead after diagnostic GC and retained managed heap stayed below 32 MiB.
+- 1,000 immutable generation stages and real collectible ALC reloads passed twice in 70.114 and 73.001 seconds; all 1,001 unloaded-context WeakReferences were dead after diagnostic GC and retained managed heap stayed below 32 MiB, including the asynchronous retirement hook.
 - Generation directories are deletable in-process after unload because entry assemblies use `LoadFromStream`.
+- Real A/B/C/D fixture: reloading A builds A -> B -> C against staged services, swaps all three, disposes old C/B/A, and leaves D unchanged.
+- Whole-closure probation and missing-entry staging failures keep the exact prior A/B/C service objects active.
+- Lock round-trip validates the exact package set and rejects a tampered content hash.
+- Plugin retirement hook completes before the old service is disposed, providing the integration point for Vulkan timeline retirement.
 
-## Remaining P3
+## Deferred after P3
 
-- Atomic multi-plugin staging and swap of a reverse dependency closure.
-- Exact `plugin.lock.json` model and graph/package hash verification as one unit.
 - Contract-generation R2 policy; schema changes remain R3 process restart.
+- Native plugin `Reloadable` remains disabled until a dedicated native callback/thread stress suite exists; default is runtime restart.

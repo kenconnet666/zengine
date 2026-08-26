@@ -32,5 +32,7 @@
   <Folder Name="/tests/fixtures/">
     <Project Path="tests/Fixtures/ZEngine.CounterPlugin.Contracts/ZEngine.CounterPlugin.Contracts.csproj" />
     <Project Path="tests/Fixtures/ZEngine.CounterPlugin.Runtime/ZEngine.CounterPlugin.Runtime.csproj" />
+    <Project Path="tests/Fixtures/ZEngine.ChainPlugin.Contracts/ZEngine.ChainPlugin.Contracts.csproj" />
+    <Project Path="tests/Fixtures/ZEngine.ChainPlugin.Runtime/ZEngine.ChainPlugin.Runtime.csproj" />
   </Folder>
 </Solution>

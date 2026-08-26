@@ -7,7 +7,9 @@ public sealed class PluginScope : IAsyncDisposable
 {
     private readonly Dictionary<Type, object> _services = [];
     private readonly List<IDisposable> _owned = [];
+    private readonly List<IPluginRetirement> _retirements = [];
     private readonly JobGroup _jobs;
+    private readonly IReadOnlyDictionary<Type, object> _imports;
     private readonly object _gate = new();
     private bool _accepting = true;
     private bool _disposed;
@@ -15,13 +17,15 @@ public sealed class PluginScope : IAsyncDisposable
     public PluginScope(
         string pluginId,
         GenerationId generation,
-        JobGroup jobs)
+        JobGroup jobs,
+        IReadOnlyDictionary<Type, object>? imports = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
         ArgumentNullException.ThrowIfNull(jobs);
         PluginId = pluginId;
         Generation = generation;
         _jobs = jobs;
+        _imports = imports ?? new Dictionary<Type, object>();
     }
 
     public string PluginId { get; }
@@ -55,6 +59,31 @@ public sealed class PluginScope : IAsyncDisposable
         ArgumentNullException.ThrowIfNull(contribution);
         EnsureAccepting();
         _owned.Add(contribution);
+    }
+
+    public void Retire(IPluginRetirement retirement)
+    {
+        ArgumentNullException.ThrowIfNull(retirement);
+        EnsureAccepting();
+        _retirements.Add(retirement);
+    }
+
+    public TService Require<TService>()
+        where TService : class
+    {
+        EnsureAccepting();
+        if (_services.TryGetValue(typeof(TService), out object? local))
+        {
+            return (TService)local;
+        }
+
+        if (_imports.TryGetValue(typeof(TService), out object? imported))
+        {
+            return (TService)imported;
+        }
+
+        throw new KeyNotFoundException(
+            $"Plugin {PluginId} requires unavailable service {typeof(TService).FullName}.");
     }
 
     public JobHandle Schedule<TJob>(
@@ -102,6 +131,12 @@ public sealed class PluginScope : IAsyncDisposable
         Suspend();
         _jobs.Quiesce();
         await _jobs.WaitForIdleAsync();
+        for (int index = _retirements.Count - 1; index >= 0; index--)
+        {
+            await _retirements[index].RetireAsync();
+        }
+
+        _retirements.Clear();
         for (int index = _owned.Count - 1; index >= 0; index--)
         {
             _owned[index].Dispose();
@@ -125,4 +160,9 @@ public sealed class PluginScope : IAsyncDisposable
             }
         }
     }
+}
+
+public interface IPluginRetirement
+{
+    ValueTask RetireAsync();
 }

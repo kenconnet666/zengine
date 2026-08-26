@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZEngine.ChainPlugin.Runtime</RootNamespace>
+    <AssemblyName>ZEngine.ChainPlugin.Runtime</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ZEngine.ChainPlugin.Contracts\ZEngine.ChainPlugin.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\src\Plugins\ZEngine.Plugins.Abstractions\ZEngine.Plugins.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

@@ -44,7 +44,8 @@ public sealed class PluginRuntime : IAsyncDisposable
 
     public async Task LoadInitialAsync(
         PluginPackage package,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        IReadOnlyDictionary<Type, object>? imports = null)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         if (_current is not null)
@@ -55,6 +56,7 @@ public sealed class PluginRuntime : IAsyncDisposable
         PluginActivation activation = await StageAsync(
             package,
             NextGeneration(),
+            imports,
             cancellationToken);
         activation.Plugin!.OnActivated();
         Volatile.Write(ref _current, activation);
@@ -63,6 +65,7 @@ public sealed class PluginRuntime : IAsyncDisposable
     public async Task<PluginReloadResult> ReloadAsync(
         PluginPackage package,
         Func<EnginePlugin, bool>? probation = null,
+        IReadOnlyDictionary<Type, object>? imports = null,
         CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -74,6 +77,7 @@ public sealed class PluginRuntime : IAsyncDisposable
             staged = await StageAsync(
                 package,
                 NextGeneration(),
+                imports,
                 cancellationToken);
             HotState state = new();
             old.Plugin!.SaveHotState(state.Writer());
@@ -152,6 +156,13 @@ public sealed class PluginRuntime : IAsyncDisposable
         return (TService)service;
     }
 
+    public IReadOnlyDictionary<Type, object> GetExportSnapshot()
+    {
+        PluginActivation activation = Volatile.Read(ref _current)
+            ?? throw new InvalidOperationException("No plugin generation is active.");
+        return new Dictionary<Type, object>(activation.Scope!.Services);
+    }
+
     public static bool CollectAndCheck(WeakReference context)
     {
         ArgumentNullException.ThrowIfNull(context);
@@ -191,6 +202,7 @@ public sealed class PluginRuntime : IAsyncDisposable
     private async Task<PluginActivation> StageAsync(
         PluginPackage package,
         GenerationId generation,
+        IReadOnlyDictionary<Type, object>? imports,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -236,7 +248,8 @@ public sealed class PluginRuntime : IAsyncDisposable
             scope = new(
                 staged.Manifest.Id,
                 generation,
-                _jobs.CreateGroup(generation));
+                _jobs.CreateGroup(generation),
+                imports);
             if (plugin is IDisposable disposable)
             {
                 scope.Own(disposable);
