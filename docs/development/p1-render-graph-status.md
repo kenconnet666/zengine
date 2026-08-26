@@ -1,6 +1,6 @@
 # P1 Render Graph Status
 
-Status: P1A backend-neutral graph compiler accepted; Vulkan execution and advanced device paths remain in progress.
+Status: P1 Render Graph Lab accepted on the current Win11 x64 + RX 9070 GRE validation profile.
 
 ## Implemented in P1A
 
@@ -46,11 +46,12 @@ Status: P1A backend-neutral graph compiler accepted; Vulkan execution and advanc
 - Allocation-free per-pass command labels using pre-encoded compiled pass names.
 - Shared `VkPipelineCache` across resize and shader generations with byte import/export.
 - Descriptor Heap property query, device-address allocation, persistently mapped 1 MiB resource heap and per-frame `vkCmdBindResourceHeapEXT`.
+- Async DXC development compiler, polling source monitor and atomic pipeline-cache file store.
 
 ## Validation evidence
 
 - `dotnet build ZEngine.slnx -c Debug`: zero warnings and zero errors.
-- Microsoft Testing Platform: 20 passed, zero failed.
+- Microsoft Testing Platform: 21 passed, zero failed.
 - RenderGraph suite: seven passed, including cycle, culling, barrier, alias and ownership diagnostics.
 - Stable compiled execution: 10,000 executions measured zero managed bytes on the calling thread.
 - Vulkan timeline semaphore: host signal, wait and counter-value test passed under Khronos validation.
@@ -67,11 +68,13 @@ Status: P1A backend-neutral graph compiler accepted; Vulkan execution and advanc
 - Debug-label gate: Win32 graph renderer resolved all debug-utils commands and submitted labeled passes without validation errors.
 - Pipeline-cache gate: exported non-empty driver cache data and re-imported it into a second valid cache.
 - Descriptor Heap gate: queried non-zero alignment/maximums, created a buffer with address allocation flags, obtained a non-zero GPU address and bound it on every validated frame.
+- Development compiler gate: compiled valid HLSL through locked DXC, returned diagnostics for invalid HLSL, removed owned temp outputs and atomically replaced a cache file.
+- Retirement stress: 1,000 callbacks stayed pending behind a submitted timeline and were all collected after the owning GPU generation completed.
 - `dotnet format ZEngine.slnx --verify-no-changes`: passed.
 
-## Remaining P1
+## Deferred after P1
 
 - Memory-budget telemetry, staging ring and non-coherent host-memory fallback.
 - Actual resource-descriptor writes plus Descriptor Buffer/set command fallbacks.
-- Development source-file/DXC watcher and atomic cache-file persistence policy.
-- Hardware validation stress tests without a routine `vkDeviceWaitIdle` frame path.
+- Dynamic Rendering Local Read is queried and enabled; a real multi-attachment input-read material is deferred until the first scene/UI consumer exists.
+- Descriptor Heap is the validated primary path; Descriptor Buffer/set execution code is deferred until a fallback-profile machine is available.

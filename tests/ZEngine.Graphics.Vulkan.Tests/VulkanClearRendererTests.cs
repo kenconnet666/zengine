@@ -55,13 +55,21 @@ public sealed class VulkanClearRendererTests
                 && barrier.NewLayout == RenderImageLayout.Present);
         Assert.Equal(2, renderer.FrameResourceCount);
 
-        for (int frame = 0; frame < 8; frame++)
+        renderer.RenderFrame(0.08f, 0.1f, 0.18f);
+        int stressRetired = 0;
+        for (int resource = 0; resource < 1_000; resource++)
+        {
+            renderer.RetireAfterCurrentFrame(() => stressRetired++);
+        }
+
+        for (int frame = 1; frame < 8; frame++)
         {
             renderer.RenderFrame(
                 0.08f + frame * 0.002f,
                 0.1f,
                 0.18f);
         }
+        Assert.Equal(1_000, stressRetired);
         device.WaitIdle();
 
         Assert.True(renderer.LastSubmittedTimelineValue >= 8);
