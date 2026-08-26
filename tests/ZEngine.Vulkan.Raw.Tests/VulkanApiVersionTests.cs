@@ -65,6 +65,22 @@ public sealed class VulkanApiVersionTests
 
         Assert.False(device.Handle.IsNull);
         Assert.False(device.GraphicsQueue.IsNull);
+        Assert.True(device.Capabilities.DynamicRenderingLocalRead);
+        Assert.Equal(
+            device.Capabilities.DescriptorHeap
+                ? VulkanDescriptorBindingModel.DescriptorHeap
+                : device.Capabilities.DescriptorBuffer
+                  && device.Capabilities.BufferDeviceAddress
+                    ? VulkanDescriptorBindingModel.DescriptorBuffer
+                    : VulkanDescriptorBindingModel.DescriptorSets,
+            device.Capabilities.DescriptorBindingModel);
+        if (selected.VendorId == 0x1002 && selected.DeviceId == 0x7550)
+        {
+            Assert.True(device.Capabilities.DescriptorHeap);
+            Assert.Equal(
+                VulkanDescriptorBindingModel.DescriptorHeap,
+                device.Capabilities.DescriptorBindingModel);
+        }
     }
 
     [Fact]

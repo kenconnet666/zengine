@@ -108,7 +108,7 @@ public sealed unsafe class Win32Window : INativeWindow
             Win32Native.DispatchMessage(in message);
         }
 
-        return _window != 0;
+        return _window != 0 && Win32Native.IsWindow(_window);
     }
 
     public void Show()

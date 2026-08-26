@@ -58,7 +58,12 @@ public enum VkStructureType : int
     PhysicalDeviceTimelineSemaphoreFeatures = 1000207000,
     SemaphoreTypeCreateInfo = 1000207002,
     SemaphoreWaitInfo = 1000207004,
-    SemaphoreSignalInfo = 1000207005
+    SemaphoreSignalInfo = 1000207005,
+    PhysicalDeviceFeatures2 = 1000059000,
+    PhysicalDeviceBufferDeviceAddressFeatures = 1000257000,
+    PhysicalDeviceDynamicRenderingLocalReadFeatures = 1000232000,
+    PhysicalDeviceDescriptorBufferFeaturesExt = 1000316002,
+    PhysicalDeviceDescriptorHeapFeaturesExt = 1000135009
 }
 
 public enum VkPhysicalDeviceType : int

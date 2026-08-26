@@ -32,6 +32,10 @@ Status: P1A backend-neutral graph compiler accepted; Vulkan execution and advanc
 - Two independently owned frame slots, each with a command pool, command buffer and acquire semaphore.
 - Timeline waits only when a frame slot or swapchain image generation is reused.
 - Fence-free steady frame submission; `vkDeviceWaitIdle` remains disposal-only.
+- `vkGetPhysicalDeviceFeatures2` capability chain for Vulkan 1.4 local read, buffer device address, Descriptor Buffer and Descriptor Heap.
+- Runtime descriptor binding policy: Descriptor Heap first, Descriptor Buffer second, descriptor sets as portable fallback.
+- RX 9070 GRE device creation with Dynamic Rendering Local Read and Descriptor Heap enabled.
+- Hardware suites serialize same-process swapchain tests; this avoids unsafe driver stress from unrelated xUnit class concurrency while solution projects may still run concurrently.
 
 ## Validation evidence
 
@@ -45,13 +49,14 @@ Status: P1A backend-neutral graph compiler accepted; Vulkan execution and advanc
 - Computer Use visual evidence: the graph-driven visible window displayed the expected interpolated RGB triangle after the renderer migration.
 - Multi-frame validation stress: clear and triangle tests each submitted eight frames across both frame slots with zero validation errors.
 - Window-generation validation: resize, minimize, restore and two swapchain rebuilds completed with zero validation errors.
+- Capability validation: RX 9070 GRE reported Descriptor Heap, Descriptor Buffer, Buffer Device Address and Dynamic Rendering Local Read; policy selected Descriptor Heap.
+- Stability rerun: the complete 18-test validation suite passed three consecutive repetitions after GPU-test serialization.
 - `dotnet format ZEngine.slnx --verify-no-changes`: passed.
 
 ## Remaining P1
 
 - Vulkan allocator baseline behind `IGpuAllocator`.
-- Dynamic Rendering Local Read capability path.
-- Descriptor Buffer primary path and fallback.
+- Descriptor Heap arena/command path and Descriptor Buffer/set fallback implementation.
 - Pipeline cache and failure-safe shader/pipeline hot reload.
 - Debug labels and RenderDoc capture naming.
 - Hardware validation stress tests without a routine `vkDeviceWaitIdle` frame path.

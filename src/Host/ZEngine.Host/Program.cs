@@ -72,6 +72,7 @@ try
         using VulkanDevice device = instance.CreateGraphicsDevice(selected);
         Console.WriteLine(
             $"Logical device created with graphics queue family {device.GraphicsQueueFamilyIndex}.");
+        PrintCapabilities(device.Capabilities);
     }
     else
     {
@@ -93,6 +94,7 @@ try
         using VulkanDevice device = instance.CreateGraphicsDevice(
             selected,
             enableSwapchain: true);
+        PrintCapabilities(device.Capabilities);
         byte[] vertexShader = File.ReadAllBytes(
             Path.Combine(
                 AppContext.BaseDirectory,
@@ -201,4 +203,15 @@ catch (Exception exception)
 {
     Console.Error.WriteLine($"Vulkan probe failed: {exception.Message}");
     return 1;
+}
+
+static void PrintCapabilities(VulkanDeviceCapabilities capabilities)
+{
+    Console.WriteLine(
+        "Device capabilities: "
+        + $"dynamicRenderingLocalRead={capabilities.DynamicRenderingLocalRead}, "
+        + $"descriptorBuffer={capabilities.DescriptorBuffer}, "
+        + $"descriptorHeap={capabilities.DescriptorHeap}, "
+        + $"bufferDeviceAddress={capabilities.BufferDeviceAddress}, "
+        + $"bindingModel={capabilities.DescriptorBindingModel}.");
 }

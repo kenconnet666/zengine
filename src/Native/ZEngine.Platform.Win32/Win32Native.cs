@@ -51,6 +51,10 @@ internal static unsafe partial class Win32Native
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static partial bool DestroyWindow(nint window);
 
+    [LibraryImport("user32.dll", EntryPoint = "IsWindow")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static partial bool IsWindow(nint window);
+
     [LibraryImport("user32.dll", EntryPoint = "ShowWindow")]
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static partial bool ShowWindow(nint window, int command);
@@ -131,7 +135,6 @@ internal static unsafe partial class Win32Native
                 DestroyWindow(window);
                 return 0;
             case WmDestroy:
-                PostQuitMessage(0);
                 return 0;
             default:
                 return DefWindowProc(window, message, wParam, lParam);

@@ -702,6 +702,7 @@ CPU 只有在对应 timeline 完成后才复用帧资源。
 - Vulkan 1.4 dynamicRenderingLocalRead：true。
 - maintenance5、maintenance6、pushDescriptor：true。
 - VK_EXT_descriptor_buffer：true。
+- VK_EXT_descriptor_heap：true；2026-08-27 实机查询和启用通过。
 - Mesh Shader：true。
 - Ray Query：true。
 - Ray Tracing Pipeline：true。
@@ -713,7 +714,7 @@ CPU 只有在对应 timeline 完成后才复用帧资源。
 - Timeline Semaphore。
 - Scalar Block Layout。
 - Buffer Device Address。
-- Descriptor Buffer。
+- Descriptor Heap；不支持时依次回退 Descriptor Buffer、descriptor set arena。
 - Maintenance 5/6。
 
 Mesh Shader、Ray Query 和 Ray Tracing Pipeline 虽然当前硬件可用，但作为 Render Feature Plugin，不成为所有 UI、2D 或基础场景的强制依赖。
@@ -733,7 +734,8 @@ Vulkan Raw Generator 的输入是仓库锁定的最新已批准 vk.xml：
 ~~~text
 Win9070GreDevelopmentProfile
   ├─ Vulkan 1.4
-  ├─ Descriptor Buffer
+  ├─ Descriptor Heap primary
+  ├─ Descriptor Buffer fallback
   ├─ Dynamic Rendering Local Read
   └─ optional Mesh/Ray feature plugins
 
@@ -1000,7 +1002,8 @@ P2 在 capability 允许时增加：
 - Bindless sampled image table。
 - Partially bound。
 - Update-after-bind 的严格子集。
-- 或 VK_EXT_descriptor_buffer。
+- VK_EXT_descriptor_heap 主路径。
+- VK_EXT_descriptor_buffer 兼容回退；该扩展已由 Khronos 标记为被 Descriptor Heap 取代。
 
 任何 descriptor 策略都必须有：
 
@@ -3305,7 +3308,7 @@ Release 插件包：
 - Dynamic Rendering Local Read。
 - Synchronization 2。
 - Timeline。
-- Descriptor Buffer primary path。
+- Descriptor Heap primary path，Descriptor Buffer / descriptor set fallback。
 - Render Graph。
 - HLSL/DXC/SPIR-V。
 - pipeline hot reload。
@@ -3600,6 +3603,7 @@ Release 插件包：
 66. Portable CSS 文件在构建期解析和验证；Web 增强包可以携带完整浏览器 CSS。（接受）
 67. 原生端不承诺完整 W3C DOM/CSS 或 Chrome 像素级兼容。（接受）
 68. Web DOM UI 不等于 Web 3D renderer；浏览器游戏场景需要未来独立 WebGPU backend。（接受）
+69. 当前 Registry 与 RX 9070 GRE 支持 VK_EXT_descriptor_heap，因此它取代已 deprecated 的 Descriptor Buffer 成为主路径；保留 Descriptor Buffer 和 descriptor set 回退。（实机核验后接受）
 
 ## 38. 官方资料与研究依据
 
@@ -3625,6 +3629,8 @@ Release 插件包：
 - [NVIDIA Vulkan recommendations](https://developer.nvidia.com/blog/?p=14696)：并行 command recording、pipeline cache、suballocation、barrier 和 queue submission。
 - [AMD Vulkan barrier guide](https://gpuopen.com/learn/vulkan-barriers-explained/)：精确 producer/consumer stage 避免无谓 pipeline bubble。
 - [Vulkan Memory Allocator](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator)：Vulkan block suballocation 的成熟基线。
+- [VK_EXT_descriptor_heap](https://docs.vulkan.org/refpages/latest/refpages/source/VK_EXT_descriptor_heap.html)：当前 descriptor heap 主路径；Khronos 已用它取代 VK_EXT_descriptor_buffer。
+- [Dynamic Rendering Local Read](https://docs.vulkan.org/refpages/latest/refpages/source/VkPhysicalDeviceDynamicRenderingLocalReadFeatures.html)：Vulkan 1.4 feature query 与 device enable chain。
 
 ### 38.3 Shader
 
@@ -3742,6 +3748,7 @@ Device-local heap    about 11.94 GiB
 - Maintenance 5/6。
 - Push Descriptor。
 - Descriptor Buffer。
+- Descriptor Heap；2026-08-27 通过 `vkGetPhysicalDeviceFeatures2` 查询并在 device feature chain 中启用。
 - Mesh Shader。
 - Ray Query。
 - Ray Tracing Pipeline。
