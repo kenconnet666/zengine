@@ -75,8 +75,13 @@ public sealed class VulkanTrianglePipelineTests
                 && barrier.DestinationPass == "Frame.Present"
                 && barrier.NewLayout == RenderImageLayout.Present);
 
-        renderer.RenderFrame(0.04f, 0.05f, 0.08f);
-        renderer.RenderFrame(0.05f, 0.06f, 0.09f);
+        for (int frame = 0; frame < 8; frame++)
+        {
+            renderer.RenderFrame(
+                0.04f + frame * 0.002f,
+                0.05f,
+                0.08f);
+        }
         device.WaitIdle();
 
         Assert.DoesNotContain(

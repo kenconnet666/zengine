@@ -7,6 +7,7 @@ namespace ZEngine.Graphics.Vulkan;
 
 public sealed unsafe class VulkanClearRenderer : IDisposable
 {
+    private const int FramesInFlight = 2;
     private const uint QueueFamilyIgnored = uint.MaxValue;
     private readonly VulkanDevice _device;
     private readonly VulkanSwapchain _swapchain;
@@ -23,12 +24,6 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
         _destroyCommandPool;
     private readonly delegate* unmanaged<VkDevice, VkSemaphore, void*, void>
         _destroySemaphore;
-    private readonly delegate* unmanaged<VkDevice, VkFence, void*, void>
-        _destroyFence;
-    private readonly delegate* unmanaged<VkDevice, uint, VkFence*, uint, ulong, VkResult>
-        _waitForFences;
-    private readonly delegate* unmanaged<VkDevice, uint, VkFence*, VkResult>
-        _resetFences;
     private readonly delegate* unmanaged<VkDevice, VkSwapchainKHR, ulong, VkSemaphore, VkFence, uint*, VkResult>
         _acquireNextImage;
     private readonly delegate* unmanaged<VkCommandBuffer, uint, VkResult>
@@ -47,11 +42,10 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
         _queueSubmit2;
     private readonly delegate* unmanaged<VkQueue, VkPresentInfoKhr*, VkResult>
         _queuePresent;
-    private VkCommandPool _commandPool;
-    private VkCommandBuffer _commandBuffer;
-    private VkSemaphore _imageAvailable;
+    private readonly FrameResources[] _frames;
+    private readonly ulong[] _imageTimelineValues;
     private readonly VkSemaphore[] _renderFinished;
-    private VkFence _inFlightFence;
+    private int _nextFrame;
     private bool _disposed;
 
     public ulong LastSubmittedTimelineValue { get; private set; }
@@ -59,6 +53,8 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
     public ulong CompletedTimelineValue => _timeline.CompletedValue;
 
     public CompiledRenderGraph FrameGraph => _renderGraph;
+
+    public int FrameResourceCount => _frames.Length;
 
     public VulkanClearRenderer(
         VulkanDevice device,
@@ -115,41 +111,9 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
         _destroyCommandPool =
             (delegate* unmanaged<VkDevice, VkCommandPool, void*, void>)device.GetProcAddress(
                 "vkDestroyCommandPool\0"u8);
-        VkCommandPoolCreateInfo poolInfo = new()
-        {
-            SType = VkStructureType.CommandPoolCreateInfo,
-            Flags = VkCommandPoolCreateFlags.ResetCommandBuffer,
-            QueueFamilyIndex = device.GraphicsQueueFamilyIndex
-        };
-        VkCommandPool commandPool = default;
-        VulkanException.ThrowIfFailed(
-            createCommandPool(
-                device.Handle,
-                &poolInfo,
-                null,
-                &commandPool),
-            "vkCreateCommandPool");
-        _commandPool = commandPool;
-
         var allocateCommandBuffers =
             (delegate* unmanaged<VkDevice, VkCommandBufferAllocateInfo*, VkCommandBuffer*, VkResult>)device.GetProcAddress(
                 "vkAllocateCommandBuffers\0"u8);
-        VkCommandBufferAllocateInfo allocationInfo = new()
-        {
-            SType = VkStructureType.CommandBufferAllocateInfo,
-            CommandPool = _commandPool,
-            Level = VkCommandBufferLevel.Primary,
-            CommandBufferCount = 1
-        };
-        VkCommandBuffer commandBuffer = default;
-        VulkanException.ThrowIfFailed(
-            allocateCommandBuffers(
-                device.Handle,
-                &allocationInfo,
-                &commandBuffer),
-            "vkAllocateCommandBuffers");
-        _commandBuffer = commandBuffer;
-
         var createSemaphore =
             (delegate* unmanaged<VkDevice, VkSemaphoreCreateInfo*, void*, VkSemaphore*, VkResult>)device.GetProcAddress(
                 "vkCreateSemaphore\0"u8);
@@ -160,16 +124,55 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
         {
             SType = VkStructureType.SemaphoreCreateInfo
         };
-        VkSemaphore imageAvailable = default;
-        VulkanException.ThrowIfFailed(
-            createSemaphore(
-                device.Handle,
-                &semaphoreInfo,
-                null,
-                &imageAvailable),
-            "vkCreateSemaphore(imageAvailable)");
-        _imageAvailable = imageAvailable;
 
+        _frames = new FrameResources[FramesInFlight];
+        for (int index = 0; index < _frames.Length; index++)
+        {
+            VkCommandPoolCreateInfo poolInfo = new()
+            {
+                SType = VkStructureType.CommandPoolCreateInfo,
+                Flags = VkCommandPoolCreateFlags.ResetCommandBuffer,
+                QueueFamilyIndex = device.GraphicsQueueFamilyIndex
+            };
+            VkCommandPool commandPool = default;
+            VulkanException.ThrowIfFailed(
+                createCommandPool(
+                    device.Handle,
+                    &poolInfo,
+                    null,
+                    &commandPool),
+                $"vkCreateCommandPool(frame[{index}])");
+
+            VkCommandBufferAllocateInfo allocationInfo = new()
+            {
+                SType = VkStructureType.CommandBufferAllocateInfo,
+                CommandPool = commandPool,
+                Level = VkCommandBufferLevel.Primary,
+                CommandBufferCount = 1
+            };
+            VkCommandBuffer commandBuffer = default;
+            VulkanException.ThrowIfFailed(
+                allocateCommandBuffers(
+                    device.Handle,
+                    &allocationInfo,
+                    &commandBuffer),
+                $"vkAllocateCommandBuffers(frame[{index}])");
+
+            VkSemaphore imageAvailable = default;
+            VulkanException.ThrowIfFailed(
+                createSemaphore(
+                    device.Handle,
+                    &semaphoreInfo,
+                    null,
+                    &imageAvailable),
+                $"vkCreateSemaphore(imageAvailable[{index}])");
+            _frames[index] = new(
+                commandPool,
+                commandBuffer,
+                imageAvailable);
+        }
+
+        _imageTimelineValues = new ulong[swapchain.Images.Count];
         for (int index = 0; index < _renderFinished.Length; index++)
         {
             VkSemaphore renderFinished = default;
@@ -182,34 +185,6 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
                 $"vkCreateSemaphore(renderFinished[{index}])");
             _renderFinished[index] = renderFinished;
         }
-
-        var createFence =
-            (delegate* unmanaged<VkDevice, VkFenceCreateInfo*, void*, VkFence*, VkResult>)device.GetProcAddress(
-                "vkCreateFence\0"u8);
-        _destroyFence =
-            (delegate* unmanaged<VkDevice, VkFence, void*, void>)device.GetProcAddress(
-                "vkDestroyFence\0"u8);
-        VkFenceCreateInfo fenceInfo = new()
-        {
-            SType = VkStructureType.FenceCreateInfo,
-            Flags = VkFenceCreateFlags.Signaled
-        };
-        VkFence inFlightFence = default;
-        VulkanException.ThrowIfFailed(
-            createFence(
-                device.Handle,
-                &fenceInfo,
-                null,
-                &inFlightFence),
-            "vkCreateFence");
-        _inFlightFence = inFlightFence;
-
-        _waitForFences =
-            (delegate* unmanaged<VkDevice, uint, VkFence*, uint, ulong, VkResult>)device.GetProcAddress(
-                "vkWaitForFences\0"u8);
-        _resetFences =
-            (delegate* unmanaged<VkDevice, uint, VkFence*, VkResult>)device.GetProcAddress(
-                "vkResetFences\0"u8);
         _acquireNextImage =
             (delegate* unmanaged<VkDevice, VkSwapchainKHR, ulong, VkSemaphore, VkFence, uint*, VkResult>)device.GetProcAddress(
                 "vkAcquireNextImageKHR\0"u8);
@@ -250,34 +225,34 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        VkFence fence = _inFlightFence;
-        VulkanException.ThrowIfFailed(
-            _waitForFences(
-                _device.Handle,
-                1,
-                &fence,
-                1,
-                ulong.MaxValue),
-            "vkWaitForFences");
+        FrameResources frame = _frames[_nextFrame];
+        if (frame.LastTimelineValue > 0)
+        {
+            _timeline.Wait(frame.LastTimelineValue);
+        }
+
         _retirementQueue.Collect(_timeline.CompletedValue);
-        VulkanException.ThrowIfFailed(
-            _resetFences(_device.Handle, 1, &fence),
-            "vkResetFences");
 
         uint imageIndex = 0;
         VkResult acquireResult = _acquireNextImage(
             _device.Handle,
             _swapchain.Handle,
             ulong.MaxValue,
-            _imageAvailable,
+            frame.ImageAvailable,
             default,
             &imageIndex);
         VulkanException.ThrowIfFailedOrIncomplete(
             acquireResult,
             "vkAcquireNextImageKHR");
 
+        ulong priorImageTimeline = _imageTimelineValues[imageIndex];
+        if (priorImageTimeline > 0)
+        {
+            _timeline.Wait(priorImageTimeline);
+        }
+
         VulkanException.ThrowIfFailed(
-            _resetCommandBuffer(_commandBuffer, 0),
+            _resetCommandBuffer(frame.CommandBuffer, 0),
             "vkResetCommandBuffer");
 
         VkCommandBufferBeginInfo beginInfo = new()
@@ -286,11 +261,11 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
             Flags = VkCommandBufferUsageFlags.OneTimeSubmit
         };
         VulkanException.ThrowIfFailed(
-            _beginCommandBuffer(_commandBuffer, &beginInfo),
+            _beginCommandBuffer(frame.CommandBuffer, &beginInfo),
             "vkBeginCommandBuffer");
 
         _graphSink.BeginFrame(
-            _commandBuffer,
+            frame.CommandBuffer,
             imageIndex,
             red,
             green,
@@ -299,19 +274,19 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
         _graphSink.EndFrame();
 
         VulkanException.ThrowIfFailed(
-            _endCommandBuffer(_commandBuffer),
+            _endCommandBuffer(frame.CommandBuffer),
             "vkEndCommandBuffer");
 
         VkSemaphoreSubmitInfo waitInfo = new()
         {
             SType = VkStructureType.SemaphoreSubmitInfo,
-            Semaphore = _imageAvailable,
+            Semaphore = frame.ImageAvailable,
             StageMask = VkPipelineStageFlags2.ColorAttachmentOutput
         };
         VkCommandBufferSubmitInfo commandInfo = new()
         {
             SType = VkStructureType.CommandBufferSubmitInfo,
-            CommandBuffer = _commandBuffer,
+            CommandBuffer = frame.CommandBuffer,
             DeviceMask = 1
         };
         VkSemaphore renderFinished = _renderFinished[imageIndex];
@@ -345,9 +320,12 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
                 _device.GraphicsQueue,
                 1,
                 &submitInfo,
-                _inFlightFence),
+                default),
             "vkQueueSubmit2");
         LastSubmittedTimelineValue = timelineValue;
+        frame.LastTimelineValue = timelineValue;
+        _imageTimelineValues[imageIndex] = timelineValue;
+        _nextFrame = (_nextFrame + 1) % _frames.Length;
 
         VkSwapchainKHR swapchain = _swapchain.Handle;
         VkPresentInfoKhr presentInfo = new()
@@ -392,15 +370,6 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
         _device.WaitIdle();
         _retirementQueue.Collect(ulong.MaxValue);
 
-        if (!_inFlightFence.IsNull)
-        {
-            _destroyFence(
-                _device.Handle,
-                _inFlightFence,
-                null);
-            _inFlightFence = default;
-        }
-
         for (int index = 0; index < _renderFinished.Length; index++)
         {
             VkSemaphore renderFinished = _renderFinished[index];
@@ -414,23 +383,26 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
             }
         }
 
-        if (!_imageAvailable.IsNull)
+        foreach (FrameResources frame in _frames)
         {
-            _destroySemaphore(
-                _device.Handle,
-                _imageAvailable,
-                null);
-            _imageAvailable = default;
-        }
+            if (!frame.ImageAvailable.IsNull)
+            {
+                _destroySemaphore(
+                    _device.Handle,
+                    frame.ImageAvailable,
+                    null);
+                frame.ImageAvailable = default;
+            }
 
-        if (!_commandPool.IsNull)
-        {
-            _destroyCommandPool(
-                _device.Handle,
-                _commandPool,
-                null);
-            _commandPool = default;
-            _commandBuffer = default;
+            if (!frame.CommandPool.IsNull)
+            {
+                _destroyCommandPool(
+                    _device.Handle,
+                    frame.CommandPool,
+                    null);
+                frame.CommandPool = default;
+                frame.CommandBuffer = default;
+            }
         }
 
         foreach (VkImageView view in _imageViews)
@@ -448,6 +420,7 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
     }
 
     private void ApplyBarrier(
+        VkCommandBuffer commandBuffer,
         uint imageIndex,
         in RenderBarrier planned)
     {
@@ -488,10 +461,11 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
             ImageMemoryBarrierCount = 1,
             PImageMemoryBarriers = &barrier
         };
-        _cmdPipelineBarrier2(_commandBuffer, &dependency);
+        _cmdPipelineBarrier2(commandBuffer, &dependency);
     }
 
     private void BeginRendering(
+        VkCommandBuffer commandBuffer,
         uint imageIndex,
         LoadOp load,
         StoreOp store,
@@ -534,7 +508,7 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
             ColorAttachmentCount = 1,
             PColorAttachments = &attachment
         };
-        _cmdBeginRendering(_commandBuffer, &renderingInfo);
+        _cmdBeginRendering(commandBuffer, &renderingInfo);
     }
 
     private static CompiledRenderGraph BuildFrameGraph(
@@ -680,6 +654,20 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
             _ => throw new ArgumentOutOfRangeException(nameof(layout))
         };
 
+    private sealed class FrameResources(
+        VkCommandPool commandPool,
+        VkCommandBuffer commandBuffer,
+        VkSemaphore imageAvailable)
+    {
+        public VkCommandPool CommandPool = commandPool;
+
+        public VkCommandBuffer CommandBuffer = commandBuffer;
+
+        public VkSemaphore ImageAvailable = imageAvailable;
+
+        public ulong LastTimelineValue;
+    }
+
     private readonly struct FramePassData;
 
     private sealed class FrameGraphSink(VulkanClearRenderer renderer)
@@ -720,7 +708,10 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
         }
 
         public void ApplyBarrier(in RenderBarrier barrier) =>
-            _renderer.ApplyBarrier(_imageIndex, in barrier);
+            _renderer.ApplyBarrier(
+                _commandBuffer,
+                _imageIndex,
+                in barrier);
 
         public void BeginPass(CompiledRenderPass pass)
         {
@@ -734,6 +725,7 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
                     })
                 {
                     _renderer.BeginRendering(
+                        _commandBuffer,
                         _imageIndex,
                         access.Load,
                         access.Store,

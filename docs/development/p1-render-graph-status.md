@@ -29,6 +29,9 @@ Status: P1A backend-neutral graph compiler accepted; Vulkan execution and advanc
 - Vulkan RenderGraph sink with typed backend command access.
 - Actual `Frame.Clear -> Frame.Triangle -> Frame.Present` hardware graph.
 - Separate dynamic-rendering scopes for clear and load/draw passes.
+- Two independently owned frame slots, each with a command pool, command buffer and acquire semaphore.
+- Timeline waits only when a frame slot or swapchain image generation is reused.
+- Fence-free steady frame submission; `vkDeviceWaitIdle` remains disposal-only.
 
 ## Validation evidence
 
@@ -40,12 +43,12 @@ Status: P1A backend-neutral graph compiler accepted; Vulkan execution and advanc
 - Render submission: two GPU frames advanced the timeline and released a deferred callback only after completion.
 - Khronos validation: the graph-generated multi-pass barrier path rendered and presented with zero error-severity messages.
 - Computer Use visual evidence: the graph-driven visible window displayed the expected interpolated RGB triangle after the renderer migration.
+- Multi-frame validation stress: clear and triangle tests each submitted eight frames across both frame slots with zero validation errors.
 - `dotnet format ZEngine.slnx --verify-no-changes`: passed.
 
 ## Remaining P1
 
 - Vulkan allocator baseline behind `IGpuAllocator`.
-- Multi-frame command pools and frame contexts.
 - Dynamic Rendering Local Read capability path.
 - Descriptor Buffer primary path and fallback.
 - Pipeline cache and failure-safe shader/pipeline hot reload.

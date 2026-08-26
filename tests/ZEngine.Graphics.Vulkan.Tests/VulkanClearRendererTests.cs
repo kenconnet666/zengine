@@ -53,12 +53,18 @@ public sealed class VulkanClearRendererTests
                 barrier.SourcePass == "Frame.Clear"
                 && barrier.DestinationPass == "Frame.Present"
                 && barrier.NewLayout == RenderImageLayout.Present);
+        Assert.Equal(2, renderer.FrameResourceCount);
 
-        renderer.RenderFrame(0.08f, 0.1f, 0.18f);
-        renderer.RenderFrame(0.1f, 0.12f, 0.2f);
+        for (int frame = 0; frame < 8; frame++)
+        {
+            renderer.RenderFrame(
+                0.08f + frame * 0.002f,
+                0.1f,
+                0.18f);
+        }
         device.WaitIdle();
 
-        Assert.True(renderer.LastSubmittedTimelineValue >= 2);
+        Assert.True(renderer.LastSubmittedTimelineValue >= 8);
         Assert.True(
             renderer.CompletedTimelineValue
             >= renderer.LastSubmittedTimelineValue);
