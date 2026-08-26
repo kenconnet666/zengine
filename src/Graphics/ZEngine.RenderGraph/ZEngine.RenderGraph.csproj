@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZEngine.RenderGraph</RootNamespace>
+    <AssemblyName>ZEngine.RenderGraph</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ZEngine.Graphics\ZEngine.Graphics.csproj" />
+  </ItemGroup>
+</Project>

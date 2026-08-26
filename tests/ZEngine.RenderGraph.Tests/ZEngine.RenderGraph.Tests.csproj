@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>ZEngine.RenderGraph.Tests</RootNamespace>
+    <AssemblyName>ZEngine.RenderGraph.Tests</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Graphics\ZEngine.Graphics\ZEngine.Graphics.csproj" />
+    <ProjectReference Include="..\..\src\Graphics\ZEngine.RenderGraph\ZEngine.RenderGraph.csproj" />
+  </ItemGroup>
+</Project>
