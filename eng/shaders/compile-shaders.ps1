@@ -42,8 +42,24 @@ if ($LASTEXITCODE -ne 0) {
     throw "Fragment shader compilation failed."
 }
 
+$alternateFragmentArguments = @(
+    "-spirv",
+    "-fspv-target-env=vulkan1.3",
+    "-O3",
+    "-T", "ps_6_0",
+    "-E", "PSMainAlt",
+    "-fspv-entrypoint-name=PSMain",
+    "-Fo", (Join-Path $outputDirectory "triangle-alt.frag.spv"),
+    $source
+)
+& $compiler @alternateFragmentArguments
+if ($LASTEXITCODE -ne 0) {
+    throw "Alternate fragment shader compilation failed."
+}
+
 $shaderFiles = @(
     (Join-Path $outputDirectory "triangle.vert.spv"),
-    (Join-Path $outputDirectory "triangle.frag.spv")
+    (Join-Path $outputDirectory "triangle.frag.spv"),
+    (Join-Path $outputDirectory "triangle-alt.frag.spv")
 )
 Get-FileHash -Algorithm SHA256 -LiteralPath $shaderFiles

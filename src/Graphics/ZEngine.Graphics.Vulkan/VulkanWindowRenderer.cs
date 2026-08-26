@@ -1,5 +1,6 @@
 using ZEngine.RenderGraph;
 using ZEngine.Vulkan.Raw;
+using System.Security.Cryptography;
 
 namespace ZEngine.Graphics.Vulkan;
 
@@ -12,8 +13,10 @@ public sealed class VulkanWindowRenderer : IDisposable
     private readonly VulkanDevice _device;
     private readonly VulkanPhysicalDeviceInfo _physicalDevice;
     private readonly VulkanSurface _surface;
-    private readonly byte[] _vertexShader;
-    private readonly byte[] _fragmentShader;
+    private byte[] _vertexShader;
+    private byte[] _fragmentShader;
+    private byte[] _vertexShaderHash;
+    private byte[] _fragmentShaderHash;
     private VulkanSwapchain? _swapchain;
     private VulkanTrianglePipeline? _pipeline;
     private VulkanClearRenderer? _renderer;
@@ -31,15 +34,22 @@ public sealed class VulkanWindowRenderer : IDisposable
         ArgumentNullException.ThrowIfNull(surface);
         ArgumentOutOfRangeException.ThrowIfZero(vertexShader.Length);
         ArgumentOutOfRangeException.ThrowIfZero(fragmentShader.Length);
+        SpirvModule.Validate(vertexShader, nameof(vertexShader));
+        SpirvModule.Validate(fragmentShader, nameof(fragmentShader));
 
         _device = device;
         _physicalDevice = physicalDevice;
         _surface = surface;
         _vertexShader = vertexShader.ToArray();
         _fragmentShader = fragmentShader.ToArray();
+        _vertexShaderHash = SHA256.HashData(vertexShader);
+        _fragmentShaderHash = SHA256.HashData(fragmentShader);
+        ShaderGeneration = 1;
     }
 
     public uint Generation { get; private set; }
+
+    public uint ShaderGeneration { get; private set; }
 
     public VkExtent2D? Extent => _swapchain?.Extent;
 
@@ -92,6 +102,80 @@ public sealed class VulkanWindowRenderer : IDisposable
             DestroyGeneration();
             return false;
         }
+    }
+
+    public ShaderReloadResult ReloadShaders(
+        ReadOnlySpan<byte> vertexShader,
+        ReadOnlySpan<byte> fragmentShader)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        byte[] nextVertex;
+        byte[] nextFragment;
+        byte[] vertexHash;
+        byte[] fragmentHash;
+        try
+        {
+            SpirvModule.Validate(vertexShader, nameof(vertexShader));
+            SpirvModule.Validate(fragmentShader, nameof(fragmentShader));
+            vertexHash = SHA256.HashData(vertexShader);
+            fragmentHash = SHA256.HashData(fragmentShader);
+            if (vertexHash.AsSpan().SequenceEqual(_vertexShaderHash)
+                && fragmentHash.AsSpan().SequenceEqual(_fragmentShaderHash))
+            {
+                return new(
+                    ShaderReloadStatus.Unchanged,
+                    ShaderGeneration);
+            }
+
+            nextVertex = vertexShader.ToArray();
+            nextFragment = fragmentShader.ToArray();
+        }
+        catch (Exception exception)
+        {
+            return new(
+                ShaderReloadStatus.Rejected,
+                ShaderGeneration,
+                exception.Message);
+        }
+
+        VulkanTrianglePipeline? candidate = null;
+        try
+        {
+            if (_swapchain is not null)
+            {
+                candidate = new(
+                    _device,
+                    _swapchain.SurfaceFormat.Format,
+                    nextVertex,
+                    nextFragment);
+            }
+        }
+        catch (Exception exception)
+        {
+            candidate?.DisposeAfterGpuCompletion();
+            return new(
+                ShaderReloadStatus.Rejected,
+                ShaderGeneration,
+                exception.Message);
+        }
+
+        if (candidate is not null)
+        {
+            VulkanTrianglePipeline previous =
+                _renderer!.ReplaceTrianglePipeline(candidate);
+            _pipeline = candidate;
+            _renderer.RetireAfterCurrentFrame(
+                previous.DisposeAfterGpuCompletion);
+        }
+
+        _vertexShader = nextVertex;
+        _fragmentShader = nextFragment;
+        _vertexShaderHash = vertexHash;
+        _fragmentShaderHash = fragmentHash;
+        ShaderGeneration++;
+        return new(
+            ShaderReloadStatus.Applied,
+            ShaderGeneration);
     }
 
     public void Dispose()

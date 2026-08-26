@@ -19,7 +19,10 @@ try
     bool resizeSmoke = args.Contains(
         "--resize-smoke",
         StringComparer.Ordinal);
-    windowSmoke |= resizeSmoke;
+    bool shaderReloadSmoke = args.Contains(
+        "--shader-reload-smoke",
+        StringComparer.Ordinal);
+    windowSmoke |= resizeSmoke || shaderReloadSmoke;
     double windowSeconds = 2;
     string? durationArgument = args.FirstOrDefault(
         argument => argument.StartsWith(
@@ -28,6 +31,10 @@ try
     if (resizeSmoke && durationArgument is null)
     {
         windowSeconds = 3.5;
+    }
+    else if (shaderReloadSmoke && durationArgument is null)
+    {
+        windowSeconds = 3;
     }
 
     if (durationArgument is not null
@@ -105,6 +112,13 @@ try
                 AppContext.BaseDirectory,
                 "Shaders",
                 "triangle.frag.spv"));
+        byte[]? alternateFragmentShader = shaderReloadSmoke
+            ? File.ReadAllBytes(
+                Path.Combine(
+                    AppContext.BaseDirectory,
+                    "Shaders",
+                    "triangle-alt.frag.spv"))
+            : null;
         using VulkanWindowRenderer renderer = new(
             device,
             selected,
@@ -128,11 +142,12 @@ try
         float phase = 0;
         uint reportedGeneration = renderer.Generation;
         int resizePhase = 0;
+        int shaderReloadPhase = 0;
         while (DateTime.UtcNow < deadline && window.PumpEvents())
         {
+            double elapsed = (DateTime.UtcNow - started).TotalSeconds;
             if (resizeSmoke)
             {
-                double elapsed = (DateTime.UtcNow - started).TotalSeconds;
                 if (resizePhase == 0 && elapsed >= 0.5)
                 {
                     window.ResizeClient(800, 450);
@@ -152,6 +167,41 @@ try
                     resizePhase = 3;
                     Console.WriteLine("Resize smoke: restored at 720x405.");
                 }
+            }
+
+            if (shaderReloadSmoke
+                && shaderReloadPhase == 0
+                && elapsed >= 0.75)
+            {
+                ShaderReloadResult applied = renderer.ReloadShaders(
+                    vertexShader,
+                    alternateFragmentShader!);
+                if (applied.Status != ShaderReloadStatus.Applied)
+                {
+                    throw new InvalidOperationException(
+                        $"Valid shader reload was not applied: {applied.Error}");
+                }
+
+                shaderReloadPhase = 1;
+                Console.WriteLine(
+                    $"Shader reload: generation {applied.Generation} applied.");
+            }
+            else if (shaderReloadSmoke
+                     && shaderReloadPhase == 1
+                     && elapsed >= 1.5)
+            {
+                ShaderReloadResult rejected = renderer.ReloadShaders(
+                    vertexShader,
+                    [0x01, 0x02, 0x03, 0x04]);
+                if (rejected.Status != ShaderReloadStatus.Rejected)
+                {
+                    throw new InvalidOperationException(
+                        "Invalid shader reload was not rejected.");
+                }
+
+                shaderReloadPhase = 2;
+                Console.WriteLine(
+                    $"Shader reload: invalid candidate rejected; generation {rejected.Generation} retained.");
             }
 
             WindowSize size = window.ClientSize;

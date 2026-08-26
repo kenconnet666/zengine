@@ -22,6 +22,10 @@
              Link="Shaders\triangle.frag.spv"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\..\shaders\compiled\triangle-alt.frag.spv"
+             Link="Shaders\triangle-alt.frag.spv"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

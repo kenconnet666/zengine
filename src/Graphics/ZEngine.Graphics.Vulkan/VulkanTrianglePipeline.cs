@@ -65,13 +65,14 @@ public sealed unsafe class VulkanTrianglePipeline : IDisposable
             device,
             createShaderModule,
             vertexShader);
-        VkShaderModule fragmentModule = CreateShaderModule(
-            device,
-            createShaderModule,
-            fragmentShader);
+        VkShaderModule fragmentModule = default;
 
         try
         {
+            fragmentModule = CreateShaderModule(
+                device,
+                createShaderModule,
+                fragmentShader);
             VkPipelineLayoutCreateInfo layoutInfo = new()
             {
                 SType = VkStructureType.PipelineLayoutCreateInfo
@@ -199,12 +200,21 @@ public sealed unsafe class VulkanTrianglePipeline : IDisposable
                 _pipeline = pipeline;
             }
         }
+        catch
+        {
+            DisposeAfterGpuCompletion();
+            throw;
+        }
         finally
         {
-            destroyShaderModule(
-                device.Handle,
-                fragmentModule,
-                null);
+            if (!fragmentModule.IsNull)
+            {
+                destroyShaderModule(
+                    device.Handle,
+                    fragmentModule,
+                    null);
+            }
+
             destroyShaderModule(
                 device.Handle,
                 vertexModule,
@@ -243,7 +253,11 @@ public sealed unsafe class VulkanTrianglePipeline : IDisposable
     public void Dispose()
     {
         _device.WaitIdle();
+        DisposeAfterGpuCompletion();
+    }
 
+    internal void DisposeAfterGpuCompletion()
+    {
         VkPipeline pipeline = _pipeline;
         if (!pipeline.IsNull)
         {

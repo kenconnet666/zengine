@@ -38,11 +38,15 @@ Status: P1A backend-neutral graph compiler accepted; Vulkan execution and advanc
 - Hardware suites serialize same-process swapchain tests; this avoids unsafe driver stress from unrelated xUnit class concurrency while solution projects may still run concurrently.
 - Pure C# Vulkan allocator behind `IGpuAllocator` with memory-type selection, aligned block suballocation, dedicated large allocations and free-range merging.
 - Persistently mapped host-coherent upload/readback blocks and typed `VulkanBuffer` ownership.
+- SPIR-V structural preflight and SHA-256 change detection.
+- Transactional shader/pipeline replacement at frame boundaries.
+- Timeline-retired old pipelines without `vkDeviceWaitIdle` on the reload path.
+- Structured `Unchanged`, `Applied` and `Rejected` reload results.
 
 ## Validation evidence
 
 - `dotnet build ZEngine.slnx -c Debug`: zero warnings and zero errors.
-- Microsoft Testing Platform: 19 passed, zero failed.
+- Microsoft Testing Platform: 20 passed, zero failed.
 - RenderGraph suite: seven passed, including cycle, culling, barrier, alias and ownership diagnostics.
 - Stable compiled execution: 10,000 executions measured zero managed bytes on the calling thread.
 - Vulkan timeline semaphore: host signal, wait and counter-value test passed under Khronos validation.
@@ -54,12 +58,14 @@ Status: P1A backend-neutral graph compiler accepted; Vulkan execution and advanc
 - Capability validation: RX 9070 GRE reported Descriptor Heap, Descriptor Buffer, Buffer Device Address and Dynamic Rendering Local Read; policy selected Descriptor Heap.
 - Stability rerun: the complete 18-test validation suite passed three consecutive repetitions after GPU-test serialization.
 - Allocator hardware test: two upload buffers shared one 16 MiB `VkDeviceMemory` block, mapped writes round-tripped, freed ranges merged and a device-local block stayed unmapped.
+- Pipeline reload hardware test: a second real fragment module advanced shader generation 1 to 2; malformed SPIR-V was rejected and generation 2 rendered another frame.
+- Automated host smoke applies the alternate pipeline, rejects an invalid candidate, then continues resize/minimize/restore rendering with zero validation errors.
 - `dotnet format ZEngine.slnx --verify-no-changes`: passed.
 
 ## Remaining P1
 
 - Memory-budget telemetry, staging ring and non-coherent host-memory fallback.
 - Descriptor Heap arena/command path and Descriptor Buffer/set fallback implementation.
-- Pipeline cache and failure-safe shader/pipeline hot reload.
+- Pipeline cache persistence and development source-file/DXC watcher.
 - Debug labels and RenderDoc capture naming.
 - Hardware validation stress tests without a routine `vkDeviceWaitIdle` frame path.

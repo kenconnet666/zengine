@@ -32,6 +32,11 @@ try {
         throw "Fragment SPIR-V validation failed with exit code $LASTEXITCODE."
     }
 
+    & $spirvValidator (Join-Path $repositoryRoot 'shaders/compiled/triangle-alt.frag.spv')
+    if ($LASTEXITCODE -ne 0) {
+        throw "Alternate fragment SPIR-V validation failed with exit code $LASTEXITCODE."
+    }
+
     if (-not $SkipBuild) {
         dotnet build (Join-Path $repositoryRoot 'ZEngine.slnx') -c Debug --nologo
         if ($LASTEXITCODE -ne 0) {
@@ -50,7 +55,8 @@ try {
             -c Debug `
             --no-build `
             -- `
-            --resize-smoke
+            --resize-smoke `
+            --shader-reload-smoke
         if ($LASTEXITCODE -ne 0) {
             throw "Visible Vulkan smoke failed with exit code $LASTEXITCODE."
         }

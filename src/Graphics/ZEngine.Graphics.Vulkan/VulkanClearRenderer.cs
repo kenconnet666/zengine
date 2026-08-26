@@ -11,7 +11,7 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
     private const uint QueueFamilyIgnored = uint.MaxValue;
     private readonly VulkanDevice _device;
     private readonly VulkanSwapchain _swapchain;
-    private readonly VulkanTrianglePipeline? _trianglePipeline;
+    private VulkanTrianglePipeline? _trianglePipeline;
     private readonly VulkanTimeline _timeline;
     private readonly FrameRetirementQueue _retirementQueue = new();
     private readonly CompiledRenderGraph _renderGraph;
@@ -357,6 +357,18 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return _retirementQueue.Collect(_timeline.CompletedValue);
+    }
+
+    public VulkanTrianglePipeline ReplaceTrianglePipeline(
+        VulkanTrianglePipeline replacement)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentNullException.ThrowIfNull(replacement);
+        VulkanTrianglePipeline previous = _trianglePipeline
+            ?? throw new InvalidOperationException(
+                "This frame graph was created without a triangle pipeline.");
+        _trianglePipeline = replacement;
+        return previous;
     }
 
     public void Dispose()

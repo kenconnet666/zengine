@@ -30,3 +30,8 @@ float4 PSMain(VertexOutput input) : SV_Target0
 {
     return float4(input.Color, 1.0);
 }
+
+float4 PSMainAlt(VertexOutput input) : SV_Target0
+{
+    return float4(input.Color.bgr, 1.0);
+}
