@@ -179,6 +179,27 @@ public sealed class World
         return entity;
     }
 
+    internal Entity SpawnSerialized(ulong mask) => SpawnCore(mask);
+
+    internal void WriteSerializedComponent(
+        Entity entity,
+        ComponentSchema schema,
+        ReadOnlySpan<byte> bytes)
+    {
+        ref EntityLocation location = ref GetLocation(entity);
+        if (bytes.Length != schema.Size)
+        {
+            throw new InvalidDataException(
+                $"Component {schema.Name} expected {schema.Size} bytes, got {bytes.Length}.");
+        }
+
+        SceneBinary.CopyToArray(
+            bytes,
+            location.Chunk!.GetColumn(schema),
+            location.Row,
+            schema.Size);
+    }
+
     private void MoveEntity<T>(
         Entity entity,
         ulong destinationMask,

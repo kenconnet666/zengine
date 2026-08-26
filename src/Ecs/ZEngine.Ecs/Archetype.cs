@@ -50,6 +50,8 @@ internal sealed class ArchetypeChunk
 
     public int Count { get; private set; }
 
+    public ReadOnlySpan<Entity> Entities => _entities.AsSpan(0, Count);
+
     public int Add(Entity entity)
     {
         if (Count == Archetype.ChunkCapacity)

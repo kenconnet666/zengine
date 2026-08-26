@@ -25,6 +25,7 @@ internal static class ComponentRegistry
 {
     private static readonly ConcurrentDictionary<Type, ComponentSchema> Schemas = new();
     private static readonly ComponentSchema?[] ByRuntimeIndex = new ComponentSchema[64];
+    private static readonly ConcurrentDictionary<ulong, ComponentSchema> ByStableId = new();
     private static int _nextRuntimeIndex = -1;
 
     public static ComponentSchema Register<T>()
@@ -50,6 +51,13 @@ internal static class ComponentRegistry
                     Unsafe.SizeOf<T>());
             });
         Volatile.Write(ref ByRuntimeIndex[schema.RuntimeIndex], schema);
+        if (!ByStableId.TryAdd(schema.StableId, schema)
+            && ByStableId[schema.StableId].Type != schema.Type)
+        {
+            throw new InvalidOperationException(
+                $"Component schema hash collision for 0x{schema.StableId:X16}.");
+        }
+
         return schema;
     }
 
@@ -57,6 +65,12 @@ internal static class ComponentRegistry
         Volatile.Read(ref ByRuntimeIndex[runtimeIndex])
         ?? throw new InvalidOperationException(
             $"No component schema is registered for runtime index {runtimeIndex}.");
+
+    public static ComponentSchema GetByStableId(ulong stableId) =>
+        ByStableId.TryGetValue(stableId, out ComponentSchema? schema)
+            ? schema
+            : throw new InvalidDataException(
+                $"Scene requires unregistered component schema 0x{stableId:X16}.");
 
     private static ulong StableHash(string value)
     {

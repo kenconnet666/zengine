@@ -12,6 +12,7 @@
     <Project Path="src/Graphics/ZEngine.RenderGraph/ZEngine.RenderGraph.csproj" />
     <Project Path="src/Ecs/ZEngine.Ecs/ZEngine.Ecs.csproj" />
     <Project Path="src/Jobs/ZEngine.Jobs/ZEngine.Jobs.csproj" />
+    <Project Path="src/Generators/ZEngine.Ecs.Generators/ZEngine.Ecs.Generators.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/HelloZEngine/HelloZEngine.csproj" />
@@ -23,5 +24,6 @@
     <Project Path="tests/ZEngine.RenderGraph.Tests/ZEngine.RenderGraph.Tests.csproj" />
     <Project Path="tests/ZEngine.Ecs.Tests/ZEngine.Ecs.Tests.csproj" />
     <Project Path="tests/ZEngine.Jobs.Tests/ZEngine.Jobs.Tests.csproj" />
+    <Project Path="tests/ZEngine.Ecs.Generators.Tests/ZEngine.Ecs.Generators.Tests.csproj" />
   </Folder>
 </Solution>
