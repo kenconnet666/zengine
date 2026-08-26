@@ -105,5 +105,11 @@ public sealed class VulkanApiVersionTests
         Assert.True(swapchain.Images.Count >= 2);
         Assert.True(swapchain.Extent.Width > 0);
         Assert.True(swapchain.Extent.Height > 0);
+        device.WaitIdle();
+
+        Assert.DoesNotContain(
+            instance.ValidationMessages,
+            message =>
+                (message.Severity & VkDebugUtilsMessageSeverityFlagsExt.Error) != 0);
     }
 }

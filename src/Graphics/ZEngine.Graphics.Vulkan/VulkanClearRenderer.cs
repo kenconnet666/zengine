@@ -44,7 +44,7 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
     private VkCommandPool _commandPool;
     private VkCommandBuffer _commandBuffer;
     private VkSemaphore _imageAvailable;
-    private VkSemaphore _renderFinished;
+    private readonly VkSemaphore[] _renderFinished;
     private VkFence _inFlightFence;
     private bool _disposed;
 
@@ -66,6 +66,7 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
 
         _imageViews = new VkImageView[swapchain.Images.Count];
         _initializedImages = new bool[swapchain.Images.Count];
+        _renderFinished = new VkSemaphore[swapchain.Images.Count];
         for (int index = 0; index < swapchain.Images.Count; index++)
         {
             VkImageViewCreateInfo createInfo = new()
@@ -156,15 +157,18 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
             "vkCreateSemaphore(imageAvailable)");
         _imageAvailable = imageAvailable;
 
-        VkSemaphore renderFinished = default;
-        VulkanException.ThrowIfFailed(
-            createSemaphore(
-                device.Handle,
-                &semaphoreInfo,
-                null,
-                &renderFinished),
-            "vkCreateSemaphore(renderFinished)");
-        _renderFinished = renderFinished;
+        for (int index = 0; index < _renderFinished.Length; index++)
+        {
+            VkSemaphore renderFinished = default;
+            VulkanException.ThrowIfFailed(
+                createSemaphore(
+                    device.Handle,
+                    &semaphoreInfo,
+                    null,
+                    &renderFinished),
+                $"vkCreateSemaphore(renderFinished[{index}])");
+            _renderFinished[index] = renderFinished;
+        }
 
         var createFence =
             (delegate* unmanaged<VkDevice, VkFenceCreateInfo*, void*, VkFence*, VkResult>)device.GetProcAddress(
@@ -291,10 +295,11 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
             CommandBuffer = _commandBuffer,
             DeviceMask = 1
         };
+        VkSemaphore renderFinished = _renderFinished[imageIndex];
         VkSemaphoreSubmitInfo signalInfo = new()
         {
             SType = VkStructureType.SemaphoreSubmitInfo,
-            Semaphore = _renderFinished,
+            Semaphore = renderFinished,
             StageMask = VkPipelineStageFlags2.AllCommands
         };
         VkSubmitInfo2 submitInfo = new()
@@ -315,7 +320,6 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
                 _inFlightFence),
             "vkQueueSubmit2");
 
-        VkSemaphore renderFinished = _renderFinished;
         VkSwapchainKHR swapchain = _swapchain.Handle;
         VkPresentInfoKhr presentInfo = new()
         {
@@ -355,13 +359,17 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
             _inFlightFence = default;
         }
 
-        if (!_renderFinished.IsNull)
+        for (int index = 0; index < _renderFinished.Length; index++)
         {
-            _destroySemaphore(
-                _device.Handle,
-                _renderFinished,
-                null);
-            _renderFinished = default;
+            VkSemaphore renderFinished = _renderFinished[index];
+            if (!renderFinished.IsNull)
+            {
+                _destroySemaphore(
+                    _device.Handle,
+                    renderFinished,
+                    null);
+                _renderFinished[index] = default;
+            }
         }
 
         if (!_imageAvailable.IsNull)

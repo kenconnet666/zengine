@@ -59,5 +59,11 @@ public sealed class VulkanTrianglePipelineTests
 
         renderer.RenderFrame(0.04f, 0.05f, 0.08f);
         renderer.RenderFrame(0.05f, 0.06f, 0.09f);
+        device.WaitIdle();
+
+        Assert.DoesNotContain(
+            instance.ValidationMessages,
+            message =>
+                (message.Severity & VkDebugUtilsMessageSeverityFlagsExt.Error) != 0);
     }
 }

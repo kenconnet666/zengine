@@ -124,6 +124,23 @@ try
             phase += 0.04f;
             Thread.Sleep(16);
         }
+
+        device.WaitIdle();
+        VulkanValidationMessage[] validationErrors = instance.ValidationMessages
+            .Where(message =>
+                (message.Severity & VkDebugUtilsMessageSeverityFlagsExt.Error) != 0)
+            .ToArray();
+        if (validationErrors.Length > 0)
+        {
+            throw new InvalidOperationException(
+                "Vulkan validation failed:" + Environment.NewLine
+                + string.Join(
+                    Environment.NewLine,
+                    validationErrors.Select(message =>
+                        $"[{message.IdName ?? message.Id.ToString(CultureInfo.InvariantCulture)}] {message.Message}")));
+        }
+
+        Console.WriteLine("Vulkan validation messenger reported no errors.");
     }
 
     return 0;

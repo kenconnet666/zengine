@@ -93,6 +93,13 @@ public sealed unsafe class VulkanDevice : IDisposable
                 PpEnabledExtensionNames =
                     extensionCount == 0 ? null : extensionNames
             };
+            VkPhysicalDeviceVulkan13Features features13 = new()
+            {
+                SType = VkStructureType.PhysicalDeviceVulkan13Features,
+                Synchronization2 = 1,
+                DynamicRendering = 1
+            };
+            createInfo.PNext = &features13;
 
             VkDevice handle = default;
             VulkanException.ThrowIfFailed(

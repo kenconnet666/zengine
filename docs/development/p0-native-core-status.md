@@ -1,6 +1,6 @@
 # P0 Native Core Status
 
-Status: P0 functional slice accepted; validation-layer follow-up pending.
+Status: P0 accepted, including validation-layer and visible hardware gates.
 
 ## Implemented in P0A
 
@@ -35,6 +35,10 @@ Status: P0 functional slice accepted; validation-layer follow-up pending.
 - Vulkan 1.4 dynamic-rendering graphics pipeline.
 - Dynamic viewport/scissor and vkCmdDraw triangle.
 - Unit and hardware smoke tests.
+- Vulkan 1.3 feature-chain enablement for synchronization2 and dynamic rendering.
+- Per-swapchain-image render-complete semaphores.
+- VK_EXT_debug_utils validation-message capture and executable assertions.
+- Portable, hash-verified Vulkan validation tool bootstrap.
 
 ## Pinned Vulkan registry
 
@@ -60,11 +64,13 @@ Status: P0 functional slice accepted; validation-layer follow-up pending.
 - Hidden triangle test: created shader modules and graphics pipeline, drew and presented two frames.
 - Computer Use visual evidence: captured the visible ZEngine Vulkan 1.4 Smoke window with a correctly interpolated RGB triangle.
 - Release self-contained triangle smoke: loaded packaged SPIR-V and presented the same pipeline.
+- Vulkan SDK 1.4.357.0 `spirv-val`: both generated shader modules passed.
+- Khronos validation layer 1.4.357: all nine tests and the visible triangle smoke completed with zero validation errors.
+- Debug messenger gate: the host printed `Vulkan validation messenger reported no errors.` and would return failure for any error-severity callback.
 - HelloZEngine: executed successfully.
 
-## Remaining P0B
+## Deferred beyond P0
 
 - Generated core enum, bitmask, structure and remaining command signatures.
-- Debug messenger and validation layer.
 - Extended physical-device feature/capability report.
-- Validation-layer installation and zero-error rendered frame.
+- Broader Vulkan API coverage will be generated only as later renderer stages require it; the P0 slice deliberately keeps the unsafe surface small.

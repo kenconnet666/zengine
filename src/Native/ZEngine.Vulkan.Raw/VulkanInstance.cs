@@ -16,11 +16,16 @@ public sealed unsafe class VulkanInstance : IDisposable
         _getQueueFamilyProperties;
     private readonly delegate* unmanaged<VkPhysicalDevice, byte*, uint*, VkExtensionProperties*, VkResult>
         _enumerateDeviceExtensionProperties;
+    private readonly delegate* unmanaged<VkInstance, VkDebugUtilsMessengerEXT, void*, void>
+        _destroyDebugMessenger = null;
+    private readonly VulkanValidationCollector? _validationCollector;
+    private VkDebugUtilsMessengerEXT _debugMessenger;
     private VkInstance _handle;
 
     private VulkanInstance(
         VulkanLoader loader,
-        VkInstance handle)
+        VkInstance handle,
+        bool enableDebugMessenger)
     {
         _loader = loader;
         _handle = handle;
@@ -39,9 +44,45 @@ public sealed unsafe class VulkanInstance : IDisposable
         _enumerateDeviceExtensionProperties =
             (delegate* unmanaged<VkPhysicalDevice, byte*, uint*, VkExtensionProperties*, VkResult>)RequireProc(
                 "vkEnumerateDeviceExtensionProperties\0"u8);
+
+        if (enableDebugMessenger)
+        {
+            _validationCollector = new();
+            var createMessenger =
+                (delegate* unmanaged<VkInstance, VkDebugUtilsMessengerCreateInfoExt*, void*, VkDebugUtilsMessengerEXT*, VkResult>)RequireProc(
+                    "vkCreateDebugUtilsMessengerEXT\0"u8);
+            _destroyDebugMessenger =
+                (delegate* unmanaged<VkInstance, VkDebugUtilsMessengerEXT, void*, void>)RequireProc(
+                    "vkDestroyDebugUtilsMessengerEXT\0"u8);
+            VkDebugUtilsMessengerCreateInfoExt createInfo = new()
+            {
+                SType = VkStructureType.DebugUtilsMessengerCreateInfoExt,
+                MessageSeverity =
+                    VkDebugUtilsMessageSeverityFlagsExt.Warning
+                    | VkDebugUtilsMessageSeverityFlagsExt.Error,
+                MessageType =
+                    VkDebugUtilsMessageTypeFlagsExt.General
+                    | VkDebugUtilsMessageTypeFlagsExt.Validation
+                    | VkDebugUtilsMessageTypeFlagsExt.Performance,
+                UserCallback = &VulkanValidationCollector.Callback,
+                UserData = _validationCollector.UserData
+            };
+            VkDebugUtilsMessengerEXT messenger = default;
+            VulkanException.ThrowIfFailed(
+                createMessenger(
+                    _handle,
+                    &createInfo,
+                    null,
+                    &messenger),
+                "vkCreateDebugUtilsMessengerEXT");
+            _debugMessenger = messenger;
+        }
     }
 
     public VkInstance Handle => _handle;
+
+    public IReadOnlyList<VulkanValidationMessage> ValidationMessages =>
+        _validationCollector?.Snapshot() ?? [];
 
     public static VulkanInstance Create(
         VulkanLoader loader,
@@ -104,7 +145,10 @@ public sealed unsafe class VulkanInstance : IDisposable
                 VkResult result = createInstance(&createInfo, null, &handle);
                 VulkanException.ThrowIfFailed(result, "vkCreateInstance");
 
-                return new(loader, handle);
+                return new(
+                    loader,
+                    handle,
+                    options.EnableDebugMessenger);
             }
         }
         finally
@@ -180,6 +224,14 @@ public sealed unsafe class VulkanInstance : IDisposable
 
     public void Dispose()
     {
+        VkDebugUtilsMessengerEXT messenger = _debugMessenger;
+        if (!messenger.IsNull)
+        {
+            _debugMessenger = default;
+            _destroyDebugMessenger(_handle, messenger, null);
+        }
+        _validationCollector?.Dispose();
+
         VkInstance handle = _handle;
         if (!handle.IsNull)
         {

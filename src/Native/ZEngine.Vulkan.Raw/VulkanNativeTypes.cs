@@ -25,6 +25,7 @@ public enum VkStructureType : int
     InstanceCreateInfo = 1,
     DeviceQueueCreateInfo = 2,
     DeviceCreateInfo = 3,
+    PhysicalDeviceVulkan13Features = 53,
     FenceCreateInfo = 8,
     SemaphoreCreateInfo = 9,
     ImageViewCreateInfo = 15,
@@ -45,14 +46,15 @@ public enum VkStructureType : int
     SwapchainCreateInfoKhr = 1000001000,
     PresentInfoKhr = 1000001001,
     Win32SurfaceCreateInfoKhr = 1000009000,
-    ImageMemoryBarrier2 = 1000314001,
+    ImageMemoryBarrier2 = 1000314002,
     DependencyInfo = 1000314003,
     SemaphoreSubmitInfo = 1000314005,
     CommandBufferSubmitInfo = 1000314006,
     SubmitInfo2 = 1000314004,
     RenderingInfo = 1000044000,
     RenderingAttachmentInfo = 1000044001,
-    PipelineRenderingCreateInfo = 1000044002
+    PipelineRenderingCreateInfo = 1000044002,
+    DebugUtilsMessengerCreateInfoExt = 1000128004
 }
 
 public enum VkPhysicalDeviceType : int
@@ -178,6 +180,28 @@ public unsafe struct VkDeviceCreateInfo
     public uint EnabledExtensionCount;
     public byte** PpEnabledExtensionNames;
     public void* PEnabledFeatures;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct VkPhysicalDeviceVulkan13Features
+{
+    public VkStructureType SType;
+    public void* PNext;
+    public uint RobustImageAccess;
+    public uint InlineUniformBlock;
+    public uint DescriptorBindingInlineUniformBlockUpdateAfterBind;
+    public uint PipelineCreationCacheControl;
+    public uint PrivateData;
+    public uint ShaderDemoteToHelperInvocation;
+    public uint ShaderTerminateInvocation;
+    public uint SubgroupSizeControl;
+    public uint ComputeFullSubgroups;
+    public uint Synchronization2;
+    public uint TextureCompressionAstcHdr;
+    public uint ShaderZeroInitializeWorkgroupMemory;
+    public uint DynamicRendering;
+    public uint ShaderIntegerDotProduct;
+    public uint Maintenance4;
 }
 
 [StructLayout(LayoutKind.Sequential)]

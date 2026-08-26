@@ -39,5 +39,11 @@ public sealed class VulkanClearRendererTests
 
         renderer.RenderFrame(0.08f, 0.1f, 0.18f);
         renderer.RenderFrame(0.1f, 0.12f, 0.2f);
+        device.WaitIdle();
+
+        Assert.DoesNotContain(
+            instance.ValidationMessages,
+            message =>
+                (message.Severity & VkDebugUtilsMessageSeverityFlagsExt.Error) != 0);
     }
 }
