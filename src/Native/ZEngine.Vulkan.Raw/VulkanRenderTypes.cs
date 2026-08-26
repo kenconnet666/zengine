@@ -158,6 +158,34 @@ public struct VkImageSubresourceRange
 }
 
 [StructLayout(LayoutKind.Sequential)]
+public struct VkImageSubresourceLayers
+{
+    public VkImageAspectFlags AspectMask;
+    public uint MipLevel;
+    public uint BaseArrayLayer;
+    public uint LayerCount;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct VkOffset3D
+{
+    public int X;
+    public int Y;
+    public int Z;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct VkBufferImageCopy
+{
+    public ulong BufferOffset;
+    public uint BufferRowLength;
+    public uint BufferImageHeight;
+    public VkImageSubresourceLayers ImageSubresource;
+    public VkOffset3D ImageOffset;
+    public VkExtent3D ImageExtent;
+}
+
+[StructLayout(LayoutKind.Sequential)]
 public unsafe struct VkImageViewCreateInfo
 {
     public VkStructureType SType;

@@ -65,7 +65,8 @@ using VulkanWindowRenderer renderer = new(
     surface,
     ReadShader("triangle.vert.spv"),
     ReadShader("triangle.frag.spv"),
-    overlayFactory: overlayFactory);
+    overlayFactory: overlayFactory,
+    captureFactory: new VulkanFrameCaptureFactory());
 Console.WriteLine(
     $"Native UiLab: nodes={layout.Bounds.Count}, paint={paint.Count}, quads={scene.Quads.Count}.");
 
@@ -83,7 +84,18 @@ while (DateTime.UtcNow < deadline && window.PumpEvents())
     Thread.Sleep(16);
 }
 
-device.WaitIdle();
+byte[] capturePng = renderer.CapturePng();
+Console.WriteLine($"Native UiLab capture: {capturePng.Length} PNG bytes.");
+string? captureArgument = args.FirstOrDefault(argument =>
+    argument.StartsWith("--capture=", StringComparison.Ordinal));
+if (captureArgument is not null)
+{
+    string capturePath = Path.GetFullPath(
+        captureArgument["--capture=".Length..]);
+    File.WriteAllBytes(capturePath, capturePng);
+    Console.WriteLine($"Native UiLab capture written to {capturePath}.");
+}
+
 VulkanValidationMessage[] errors = instance.ValidationMessages
     .Where(message =>
         (message.Severity & VkDebugUtilsMessageSeverityFlagsExt.Error) != 0)

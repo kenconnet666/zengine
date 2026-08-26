@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZEngine.Agent</RootNamespace>
+    <AssemblyName>ZEngine.Agent</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Foundation\ZEngine.Core\ZEngine.Core.csproj" />
+    <ProjectReference Include="..\..\UI\Zui.Core\Zui.Core.csproj" />
+    <ProjectReference Include="..\..\UI\Zui.Rendering\Zui.Rendering.csproj" />
+  </ItemGroup>
+</Project>

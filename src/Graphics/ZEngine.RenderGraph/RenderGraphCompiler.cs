@@ -13,13 +13,18 @@ internal static class RenderGraphCompiler
         HashSet<int>[] dependencies = CreateSets(passes.Count);
         int[] lastWriters = new int[resources.Count];
         Array.Fill(lastWriters, -1);
+        int[] lastAccessPasses = new int[resources.Count];
+        Array.Fill(lastAccessPasses, -1);
+        RenderImageLayout?[] lastLayouts = new RenderImageLayout?[resources.Count];
         HashSet<int>[] readers = CreateSets(resources.Count);
 
         BuildResourceDependencies(
             passes,
             dependencies,
             lastWriters,
-            readers);
+            readers,
+            lastAccessPasses,
+            lastLayouts);
         BuildExplicitDependencies(
             passes,
             passIndices,
@@ -85,12 +90,22 @@ internal static class RenderGraphCompiler
         IReadOnlyList<RenderPassDefinition> passes,
         HashSet<int>[] dependencies,
         int[] lastWriters,
-        HashSet<int>[] readers)
+        HashSet<int>[] readers,
+        int[] lastAccessPasses,
+        RenderImageLayout?[] lastLayouts)
     {
         foreach (RenderPassDefinition pass in passes)
         {
             foreach (RenderResourceAccess access in pass.Accesses)
             {
+                int lastAccess = lastAccessPasses[access.ResourceIndex];
+                if (!access.Writes
+                    && lastAccess >= 0
+                    && lastLayouts[access.ResourceIndex] != access.Layout)
+                {
+                    dependencies[pass.Index].Add(lastAccess);
+                }
+
                 int writer = lastWriters[access.ResourceIndex];
                 if (writer >= 0)
                 {
@@ -100,6 +115,8 @@ internal static class RenderGraphCompiler
                 if (!access.Writes)
                 {
                     readers[access.ResourceIndex].Add(pass.Index);
+                    lastAccessPasses[access.ResourceIndex] = pass.Index;
+                    lastLayouts[access.ResourceIndex] = access.Layout;
                     continue;
                 }
 
@@ -113,6 +130,8 @@ internal static class RenderGraphCompiler
 
                 readers[access.ResourceIndex].Clear();
                 lastWriters[access.ResourceIndex] = pass.Index;
+                lastAccessPasses[access.ResourceIndex] = pass.Index;
+                lastLayouts[access.ResourceIndex] = access.Layout;
             }
         }
     }

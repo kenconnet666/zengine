@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>ZEngine.Agent.Tests</RootNamespace>
+    <AssemblyName>ZEngine.Agent.Tests</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Agent\ZEngine.Agent\ZEngine.Agent.csproj" />
+    <ProjectReference Include="..\..\samples\UiLab.Shared\UiLab.Shared.csproj" />
+  </ItemGroup>
+</Project>

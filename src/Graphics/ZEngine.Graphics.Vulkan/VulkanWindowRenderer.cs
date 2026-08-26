@@ -21,10 +21,12 @@ public sealed class VulkanWindowRenderer : IDisposable
     private readonly VulkanGpuAllocator _allocator;
     private readonly VulkanDescriptorHeap? _descriptorHeap;
     private readonly IVulkanOverlayFactory? _overlayFactory;
+    private readonly IVulkanFrameCaptureFactory? _captureFactory;
     private VulkanSwapchain? _swapchain;
     private VulkanTrianglePipeline? _pipeline;
     private VulkanClearRenderer? _renderer;
     private IVulkanOverlay? _overlay;
+    private IVulkanFrameCapture? _capture;
     private bool _disposed;
 
     public VulkanWindowRenderer(
@@ -34,7 +36,8 @@ public sealed class VulkanWindowRenderer : IDisposable
         ReadOnlySpan<byte> vertexShader,
         ReadOnlySpan<byte> fragmentShader,
         ReadOnlySpan<byte> initialPipelineCache = default,
-        IVulkanOverlayFactory? overlayFactory = null)
+        IVulkanOverlayFactory? overlayFactory = null,
+        IVulkanFrameCaptureFactory? captureFactory = null)
     {
         ArgumentNullException.ThrowIfNull(device);
         ArgumentNullException.ThrowIfNull(physicalDevice);
@@ -48,6 +51,7 @@ public sealed class VulkanWindowRenderer : IDisposable
         _physicalDevice = physicalDevice;
         _surface = surface;
         _overlayFactory = overlayFactory;
+        _captureFactory = captureFactory;
         _pipelineCache = new(device, initialPipelineCache);
         _allocator = new(device, physicalDevice.MemoryProperties);
         try
@@ -84,6 +88,16 @@ public sealed class VulkanWindowRenderer : IDisposable
         _device.Capabilities.DescriptorBindingModel;
 
     public ulong DescriptorHeapSize => _descriptorHeap?.Size ?? 0;
+
+    public byte[] CapturePng()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        IVulkanFrameCapture capture = _capture
+            ?? throw new InvalidOperationException(
+                "This window renderer was not created with a capture factory.");
+        _renderer!.WaitForLastSubmitted();
+        return capture.ReadPng();
+    }
 
     public bool Prepare(
         uint requestedWidth,
@@ -233,6 +247,7 @@ public sealed class VulkanWindowRenderer : IDisposable
             requestedHeight);
         VulkanTrianglePipeline? pipeline = null;
         IVulkanOverlay? overlay = null;
+        IVulkanFrameCapture? capture = null;
         VulkanClearRenderer? renderer = null;
         try
         {
@@ -245,17 +260,34 @@ public sealed class VulkanWindowRenderer : IDisposable
             overlay = _overlayFactory?.Create(
                 _device,
                 swapchain.SurfaceFormat.Format);
+            if (_captureFactory is not null)
+            {
+                if ((swapchain.ImageUsage & VkImageUsageFlags.TransferSource) == 0)
+                {
+                    throw new NotSupportedException(
+                        "The selected swapchain does not support transfer-source capture.");
+                }
+
+                capture = _captureFactory.Create(
+                    _device,
+                    _allocator,
+                    swapchain.Extent,
+                    swapchain.SurfaceFormat.Format);
+            }
+
             renderer = new(
                 _device,
                 swapchain,
                 pipeline,
                 _descriptorHeap,
-                overlay);
+                overlay,
+                capture);
         }
         catch
         {
             renderer?.Dispose();
             overlay?.Dispose();
+            capture?.Dispose();
             pipeline?.Dispose();
             swapchain.Dispose();
             throw;
@@ -264,6 +296,7 @@ public sealed class VulkanWindowRenderer : IDisposable
         _swapchain = swapchain;
         _pipeline = pipeline;
         _overlay = overlay;
+        _capture = capture;
         _renderer = renderer;
         Generation++;
     }
@@ -274,6 +307,8 @@ public sealed class VulkanWindowRenderer : IDisposable
         _renderer = null;
         _overlay?.Dispose();
         _overlay = null;
+        _capture?.Dispose();
+        _capture = null;
         _pipeline?.Dispose();
         _pipeline = null;
         _swapchain?.Dispose();

@@ -247,6 +247,43 @@ public sealed class RenderGraphCompilerTests
         Assert.Equal(0, allocated);
     }
 
+    [Fact]
+    public void SerializesReadOnlyImageAccessesWhenLayoutsDiffer()
+    {
+        RenderGraphBuilder graph = new();
+        RenderImage<ColorTarget> image = graph.CreateImage<ColorTarget>(
+            "Capture.Source",
+            new(
+                PixelFormat.Bgra8Srgb,
+                ResourceSize2D.Absolute(320, 180),
+                ImageUsage.ColorAttachment
+                | ImageUsage.TransferSource
+                | ImageUsage.Present));
+        graph.Pass<SingleImageData>("Draw", pass =>
+        {
+            pass.Data.Image = pass.Write(image, ImageAccess.ColorAttachment());
+            pass.Execute(static (ref RenderGraphCommandContext _, in SingleImageData _) => { });
+        });
+        graph.Pass<SingleImageData>("Capture", pass =>
+        {
+            pass.Data.Image = pass.Read(image, ImageAccess.TransferSource());
+            pass.SideEffect();
+            pass.Execute(static (ref RenderGraphCommandContext _, in SingleImageData _) => { });
+        });
+        graph.Pass<SingleImageData>("Present", pass =>
+        {
+            pass.Data.Image = pass.Read(image, ImageAccess.Present());
+            pass.SideEffect();
+            pass.Execute(static (ref RenderGraphCommandContext _, in SingleImageData _) => { });
+        });
+
+        CompiledRenderGraph compiled = graph.Compile();
+        CompiledRenderPass present = Assert.Single(
+            compiled.Passes,
+            pass => pass.Name == "Present");
+        Assert.Contains("Capture", present.Dependencies);
+    }
+
     private struct GBufferData
     {
         public RenderImage<ColorTarget> Color;

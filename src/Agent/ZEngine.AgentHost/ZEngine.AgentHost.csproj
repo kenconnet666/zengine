@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>ZEngine.AgentHost</RootNamespace>
+    <AssemblyName>ZEngine.AgentHost</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" />
+    <PackageReference Include="ModelContextProtocol.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ZEngine.Agent\ZEngine.Agent.csproj" />
+    <ProjectReference Include="..\..\UI\Zui.Basic\Zui.Basic.csproj" />
+    <ProjectReference Include="..\..\UI\Zui.Rendering\Zui.Rendering.csproj" />
+    <ProjectReference Include="..\..\Graphics\ZEngine.Graphics.Vulkan\ZEngine.Graphics.Vulkan.csproj" />
+  </ItemGroup>
+</Project>

@@ -5,4 +5,6 @@ public interface IVulkanRenderGraphCommands
     void DrawTriangle();
 
     void DrawOverlay();
+
+    void CaptureFrame();
 }

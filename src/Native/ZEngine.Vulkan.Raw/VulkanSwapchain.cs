@@ -15,6 +15,7 @@ public sealed unsafe class VulkanSwapchain : IDisposable
         VkExtent2D extent,
         VkSurfaceFormatKhr surfaceFormat,
         VkPresentModeKhr presentMode,
+        VkImageUsageFlags imageUsage,
         IReadOnlyList<VkImage> images,
         delegate* unmanaged<VkDevice, VkSwapchainKHR, void*, void> destroySwapchain)
     {
@@ -23,6 +24,7 @@ public sealed unsafe class VulkanSwapchain : IDisposable
         Extent = extent;
         SurfaceFormat = surfaceFormat;
         PresentMode = presentMode;
+        ImageUsage = imageUsage;
         Images = images;
         _destroySwapchain = destroySwapchain;
     }
@@ -34,6 +36,8 @@ public sealed unsafe class VulkanSwapchain : IDisposable
     public VkSurfaceFormatKhr SurfaceFormat { get; }
 
     public VkPresentModeKhr PresentMode { get; }
+
+    public VkImageUsageFlags ImageUsage { get; }
 
     public IReadOnlyList<VkImage> Images { get; }
 
@@ -66,6 +70,13 @@ public sealed unsafe class VulkanSwapchain : IDisposable
             imageCount = support.Capabilities.MaxImageCount;
         }
 
+        VkImageUsageFlags imageUsage = VkImageUsageFlags.ColorAttachment;
+        if ((support.Capabilities.SupportedUsageFlags
+             & VkImageUsageFlags.TransferSource) != 0)
+        {
+            imageUsage |= VkImageUsageFlags.TransferSource;
+        }
+
         VkSwapchainCreateInfoKhr createInfo = new()
         {
             SType = VkStructureType.SwapchainCreateInfoKhr,
@@ -75,7 +86,7 @@ public sealed unsafe class VulkanSwapchain : IDisposable
             ImageColorSpace = surfaceFormat.ColorSpace,
             ImageExtent = extent,
             ImageArrayLayers = 1,
-            ImageUsage = VkImageUsageFlags.ColorAttachment,
+            ImageUsage = imageUsage,
             ImageSharingMode = VkSharingMode.Exclusive,
             PreTransform = support.Capabilities.CurrentTransform,
             CompositeAlpha = SelectCompositeAlpha(
@@ -131,6 +142,7 @@ public sealed unsafe class VulkanSwapchain : IDisposable
             extent,
             surfaceFormat,
             presentMode,
+            imageUsage,
             images.AsSpan(0, (int)actualImageCount).ToArray(),
             destroySwapchain);
     }
