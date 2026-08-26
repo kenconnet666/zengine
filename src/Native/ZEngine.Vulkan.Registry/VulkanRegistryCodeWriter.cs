@@ -28,8 +28,9 @@ public static class VulkanRegistryCodeWriter
         writer.WriteLine("}");
         writer.WriteLine();
 
-        foreach (VulkanHandle handle in registry.Handles)
+        for (int index = 0; index < registry.Handles.Count; index++)
         {
+            VulkanHandle handle = registry.Handles[index];
             string storageType = handle.IsDispatchable ? "nint" : "ulong";
             writer.WriteLine(
                 $"public readonly record struct {handle.Name}({storageType} Value)");
@@ -38,7 +39,10 @@ public static class VulkanRegistryCodeWriter
             writer.WriteLine("public bool IsNull => Value == 0;");
             writer.Indent--;
             writer.WriteLine("}");
-            writer.WriteLine();
+            if (index + 1 < registry.Handles.Count)
+            {
+                writer.WriteLine();
+            }
         }
     }
 }

@@ -39,4 +39,30 @@ public sealed class VulkanApiVersionTests
         Assert.True(version.Major >= 1);
         Assert.True(version.Minor >= 4);
     }
+
+    [Fact]
+    public void CreatesInstanceEnumeratesGpuAndCreatesLogicalDevice()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        using VulkanLoader loader = VulkanLoader.OpenSystem();
+        using VulkanInstance instance = VulkanInstance.Create(loader);
+
+        IReadOnlyList<VulkanPhysicalDeviceInfo> devices =
+            instance.EnumeratePhysicalDevices();
+
+        VulkanPhysicalDeviceInfo selected = Assert.Single(devices);
+        Assert.False(string.IsNullOrWhiteSpace(selected.Name));
+        Assert.True(selected.ApiVersion.Major >= 1);
+        Assert.True(selected.Extensions.Contains("VK_KHR_swapchain"));
+
+        using VulkanDevice device =
+            instance.CreateGraphicsDevice(selected);
+
+        Assert.False(device.Handle.IsNull);
+        Assert.False(device.GraphicsQueue.IsNull);
+    }
 }

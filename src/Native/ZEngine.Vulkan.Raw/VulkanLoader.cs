@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using ZEngine.Vulkan.Raw.Generated;
 
 namespace ZEngine.Vulkan.Raw;
 
@@ -66,6 +67,25 @@ public sealed unsafe class VulkanLoader : IDisposable
         return new(version);
     }
 
+    public nint GetInstanceProcAddress(
+        VkInstance instance,
+        ReadOnlySpan<byte> nullTerminatedName)
+    {
+        ObjectDisposedException.ThrowIf(_library == 0, this);
+
+        if (nullTerminatedName.IsEmpty || nullTerminatedName[^1] != 0)
+        {
+            throw new ArgumentException(
+                "A Vulkan function name must be null-terminated UTF-8.",
+                nameof(nullTerminatedName));
+        }
+
+        fixed (byte* pointer = nullTerminatedName)
+        {
+            return _getInstanceProcAddr(instance.Value, pointer);
+        }
+    }
+
     public void Dispose()
     {
         nint library = Interlocked.Exchange(ref _library, 0);
@@ -77,17 +97,7 @@ public sealed unsafe class VulkanLoader : IDisposable
 
     private nint GetGlobalProc(ReadOnlySpan<byte> name)
     {
-        if (name.IsEmpty || name[^1] != 0)
-        {
-            throw new ArgumentException(
-                "A Vulkan function name must be null-terminated UTF-8.",
-                nameof(name));
-        }
-
-        fixed (byte* pointer = name)
-        {
-            return _getInstanceProcAddr(0, pointer);
-        }
+        return GetInstanceProcAddress(default, name);
     }
 
     private static string[] CandidateLibraryNames() =>

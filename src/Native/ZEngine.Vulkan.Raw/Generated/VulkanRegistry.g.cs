@@ -324,4 +324,3 @@ public readonly record struct VkVideoSessionParametersKHR(ulong Value)
 {
     public bool IsNull => Value == 0;
 }
-

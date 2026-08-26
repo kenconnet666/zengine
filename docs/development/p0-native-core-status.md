@@ -15,6 +15,10 @@ Status: P0A accepted, P0B pending.
 - Registry command-line generator.
 - Vulkan Raw system-loader wrapper using unmanaged function pointers.
 - Host environment probe.
+- Vulkan 1.4 instance creation.
+- Physical-device enumeration and property report.
+- Graphics queue-family selection.
+- Logical-device and graphics-queue creation.
 - Unit and hardware smoke tests.
 
 ## Pinned Vulkan registry
@@ -29,18 +33,19 @@ Status: P0A accepted, P0B pending.
 ## Validation evidence
 
 - dotnet build ZEngine.slnx -c Debug: passed with zero warnings and zero errors.
-- dotnet test using Microsoft Testing Platform: five passed, zero failed.
+- dotnet test using Microsoft Testing Platform: six passed, zero failed.
 - ZEngine.Host: detected Windows x64 and win-x64.
 - Vulkan Raw probe: loaded vulkan-1.dll through NativeLibrary and reported Vulkan loader API 1.4.341.
+- Vulkan Instance probe: enumerated AMD Radeon RX 9070 GRE as Vulkan 1.4.349, vendor 0x1002, device 0x7550.
+- Vulkan Device probe: selected graphics queue family 0 and created a logical device and graphics queue.
 - HelloZEngine: executed successfully.
 
 ## Remaining P0B
 
-- Generated core enum, bitmask, structure and command signatures.
+- Generated core enum, bitmask, structure and remaining command signatures.
 - Win32 window and message pump.
-- Vulkan instance and debug messenger.
-- Physical-device capability report.
-- Logical device and queue selection.
+- Debug messenger and validation layer.
+- Extended physical-device feature/capability report.
 - Window surface and swapchain.
 - Validation-layer installation and zero-error triangle.
 - Self-contained publish acceptance.
