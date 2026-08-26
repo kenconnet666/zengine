@@ -1,4 +1,5 @@
 using ZEngine.Platform.Win32;
+using ZEngine.RenderGraph;
 using ZEngine.Vulkan.Raw;
 using Xunit;
 
@@ -56,6 +57,23 @@ public sealed class VulkanTrianglePipelineTests
             device,
             swapchain,
             pipeline);
+
+        Assert.Equal(
+            ["Frame.Clear", "Frame.Triangle", "Frame.Present"],
+            renderer.FrameGraph.Passes.Select(pass => pass.Name));
+        Assert.Contains(
+            renderer.FrameGraph.Barriers,
+            barrier =>
+                barrier.SourcePass == "Frame.Clear"
+                && barrier.DestinationPass == "Frame.Triangle"
+                && barrier.OldLayout == RenderImageLayout.ColorAttachment
+                && barrier.NewLayout == RenderImageLayout.ColorAttachment);
+        Assert.Contains(
+            renderer.FrameGraph.Barriers,
+            barrier =>
+                barrier.SourcePass == "Frame.Triangle"
+                && barrier.DestinationPass == "Frame.Present"
+                && barrier.NewLayout == RenderImageLayout.Present);
 
         renderer.RenderFrame(0.04f, 0.05f, 0.08f);
         renderer.RenderFrame(0.05f, 0.06f, 0.09f);

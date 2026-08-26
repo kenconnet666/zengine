@@ -26,17 +26,37 @@ public readonly record struct ResourceLifetime(
     bool Transient,
     int AliasSlot);
 
+public enum CompiledAccessMode
+{
+    Read,
+    Write,
+    ReadWrite
+}
+
+public readonly record struct CompiledResourceAccess(
+    int ResourceIndex,
+    string Resource,
+    CompiledResourceKind ResourceKind,
+    CompiledAccessMode Mode,
+    RenderPipelineStage Stage,
+    RenderAccessFlags Access,
+    RenderImageLayout? Layout,
+    LoadOp Load,
+    StoreOp Store);
+
 public sealed class CompiledRenderPass
 {
     internal CompiledRenderPass(
         string name,
         int originalIndex,
         string[] dependencies,
+        CompiledResourceAccess[] accesses,
         IRenderPassExecutor executor)
     {
         Name = name;
         OriginalIndex = originalIndex;
         Dependencies = dependencies;
+        Accesses = accesses;
         Executor = executor;
     }
 
@@ -45,6 +65,8 @@ public sealed class CompiledRenderPass
     public int OriginalIndex { get; }
 
     public IReadOnlyList<string> Dependencies { get; }
+
+    public IReadOnlyList<CompiledResourceAccess> Accesses { get; }
 
     internal IRenderPassExecutor Executor { get; }
 }
@@ -80,6 +102,18 @@ public struct RenderGraphCommandContext
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(command);
         _sink.Command(PassName, command);
+    }
+
+    public readonly TBackend GetBackend<TBackend>()
+        where TBackend : class
+    {
+        if (_sink is TBackend backend)
+        {
+            return backend;
+        }
+
+        throw new NotSupportedException(
+            $"The active render graph sink does not implement {typeof(TBackend).FullName}.");
     }
 }
 

@@ -23,6 +23,12 @@ Status: P1A backend-neutral graph compiler accepted; Vulkan execution and advanc
 - Vulkan timeline-semaphore feature enablement and raw wrapper.
 - GPU submission timeline signaling wired into the current renderer.
 - Timeline-driven deferred-release collection on frame boundaries.
+- Imported image initial-state declarations and external-to-first-pass barriers.
+- Public compiled resource-access plan for backend execution.
+- Vulkan stage, access and layout translation for Synchronization 2 barriers.
+- Vulkan RenderGraph sink with typed backend command access.
+- Actual `Frame.Clear -> Frame.Triangle -> Frame.Present` hardware graph.
+- Separate dynamic-rendering scopes for clear and load/draw passes.
 
 ## Validation evidence
 
@@ -32,13 +38,14 @@ Status: P1A backend-neutral graph compiler accepted; Vulkan execution and advanc
 - Stable compiled execution: 10,000 executions measured zero managed bytes on the calling thread.
 - Vulkan timeline semaphore: host signal, wait and counter-value test passed under Khronos validation.
 - Render submission: two GPU frames advanced the timeline and released a deferred callback only after completion.
+- Khronos validation: the graph-generated multi-pass barrier path rendered and presented with zero error-severity messages.
+- Computer Use visual evidence: the graph-driven visible window displayed the expected interpolated RGB triangle after the renderer migration.
 - `dotnet format ZEngine.slnx --verify-no-changes`: passed.
 
 ## Remaining P1
 
 - Vulkan allocator baseline behind `IGpuAllocator`.
 - Multi-frame command pools and frame contexts.
-- Vulkan RenderGraph command sink and barrier translation.
 - Dynamic Rendering Local Read capability path.
 - Descriptor Buffer primary path and fallback.
 - Pipeline cache and failure-safe shader/pipeline hot reload.

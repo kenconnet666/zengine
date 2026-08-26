@@ -1,4 +1,5 @@
 using ZEngine.Platform.Win32;
+using ZEngine.RenderGraph;
 using ZEngine.Vulkan.Raw;
 using Xunit;
 
@@ -36,6 +37,22 @@ public sealed class VulkanClearRendererTests
             window.ClientSize.Width,
             window.ClientSize.Height);
         using VulkanClearRenderer renderer = new(device, swapchain);
+
+        Assert.Equal(
+            ["Frame.Clear", "Frame.Present"],
+            renderer.FrameGraph.Passes.Select(pass => pass.Name));
+        Assert.Contains(
+            renderer.FrameGraph.Barriers,
+            barrier =>
+                barrier.SourcePass == "<external>"
+                && barrier.DestinationPass == "Frame.Clear"
+                && barrier.NewLayout == RenderImageLayout.ColorAttachment);
+        Assert.Contains(
+            renderer.FrameGraph.Barriers,
+            barrier =>
+                barrier.SourcePass == "Frame.Clear"
+                && barrier.DestinationPass == "Frame.Present"
+                && barrier.NewLayout == RenderImageLayout.Present);
 
         renderer.RenderFrame(0.08f, 0.1f, 0.18f);
         renderer.RenderFrame(0.1f, 0.12f, 0.2f);

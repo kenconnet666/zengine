@@ -74,4 +74,5 @@ internal sealed record RenderResourceDefinition(
     string Name,
     RenderResourceKind Kind,
     object Descriptor,
-    bool Imported);
+    bool Imported,
+    RenderResourceAccess? InitialAccess);

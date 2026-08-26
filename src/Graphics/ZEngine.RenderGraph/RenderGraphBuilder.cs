@@ -19,8 +19,13 @@ public sealed class RenderGraphBuilder
 
     public RenderImage<TKind> ImportImage<TKind>(
         string name,
-        ImageDescriptor descriptor) =>
-        CreateImageCore<TKind>(name, descriptor, imported: true);
+        ImageDescriptor descriptor,
+        ImageAccess initialAccess) =>
+        CreateImageCore<TKind>(
+            name,
+            descriptor,
+            imported: true,
+            initialAccess);
 
     public RenderBuffer<TKind> CreateBuffer<TKind>(
         string name,
@@ -123,7 +128,8 @@ public sealed class RenderGraphBuilder
     private RenderImage<TKind> CreateImageCore<TKind>(
         string name,
         ImageDescriptor descriptor,
-        bool imported)
+        bool imported,
+        ImageAccess? initialAccess = null)
     {
         EnsureMutable();
         ValidateResourceName(name);
@@ -141,6 +147,13 @@ public sealed class RenderGraphBuilder
                 nameof(descriptor));
         }
 
+        if (imported && initialAccess is null)
+        {
+            throw new ArgumentException(
+                "An imported render image requires an explicit initial access state.",
+                nameof(initialAccess));
+        }
+
         int index = _resources.Count;
         _resources.Add(
             new(
@@ -148,7 +161,17 @@ public sealed class RenderGraphBuilder
                 name,
                 RenderResourceKind.Image,
                 descriptor,
-                imported));
+                imported,
+                initialAccess is { } state
+                    ? new RenderResourceAccess(
+                        index,
+                        RenderAccessMode.Read,
+                        state.Stage,
+                        state.Access,
+                        state.Layout,
+                        state.Load,
+                        state.Store)
+                    : null));
         return new(new(_graphId, index, RenderResourceKind.Image));
     }
 
@@ -166,7 +189,8 @@ public sealed class RenderGraphBuilder
                 name,
                 RenderResourceKind.Buffer,
                 descriptor,
-                imported));
+                imported,
+                null));
         return new(new(_graphId, index, RenderResourceKind.Buffer));
     }
 

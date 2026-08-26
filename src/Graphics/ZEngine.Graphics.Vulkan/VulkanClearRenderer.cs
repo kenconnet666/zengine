@@ -1,4 +1,5 @@
 using ZEngine.Graphics;
+using ZEngine.RenderGraph;
 using ZEngine.Vulkan.Raw;
 using ZEngine.Vulkan.Raw.Generated;
 
@@ -12,6 +13,8 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
     private readonly VulkanTrianglePipeline? _trianglePipeline;
     private readonly VulkanTimeline _timeline;
     private readonly FrameRetirementQueue _retirementQueue = new();
+    private readonly CompiledRenderGraph _renderGraph;
+    private readonly FrameGraphSink _graphSink;
     private readonly VkImageView[] _imageViews;
     private readonly bool[] _initializedImages;
     private readonly delegate* unmanaged<VkDevice, VkImageView, void*, void>
@@ -54,6 +57,8 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
     public ulong LastSubmittedTimelineValue { get; private set; }
 
     public ulong CompletedTimelineValue => _timeline.CompletedValue;
+
+    public CompiledRenderGraph FrameGraph => _renderGraph;
 
     public VulkanClearRenderer(
         VulkanDevice device,
@@ -232,6 +237,10 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
         _queuePresent =
             (delegate* unmanaged<VkQueue, VkPresentInfoKhr*, VkResult>)device.GetProcAddress(
                 "vkQueuePresentKHR\0"u8);
+        _renderGraph = BuildFrameGraph(
+            swapchain,
+            trianglePipeline is not null);
+        _graphSink = new(this);
     }
 
     public void RenderFrame(
@@ -280,13 +289,14 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
             _beginCommandBuffer(_commandBuffer, &beginInfo),
             "vkBeginCommandBuffer");
 
-        TransitionToColorAttachment(imageIndex);
-        BeginClearRendering(imageIndex, red, green, blue);
-        _trianglePipeline?.Draw(
+        _graphSink.BeginFrame(
             _commandBuffer,
-            _swapchain.Extent);
-        _cmdEndRendering(_commandBuffer);
-        TransitionToPresent(imageIndex);
+            imageIndex,
+            red,
+            green,
+            blue);
+        _renderGraph.Execute(_graphSink);
+        _graphSink.EndFrame();
 
         VulkanException.ThrowIfFailed(
             _endCommandBuffer(_commandBuffer),
@@ -437,21 +447,36 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
         _timeline.Dispose();
     }
 
-    private void TransitionToColorAttachment(uint imageIndex)
+    private void ApplyBarrier(
+        uint imageIndex,
+        in RenderBarrier planned)
     {
+        if (!string.Equals(
+                planned.Resource,
+                "Swapchain.Color",
+                StringComparison.Ordinal))
+        {
+            throw new NotSupportedException(
+                $"The P1 Vulkan graph sink cannot resolve resource '{planned.Resource}'.");
+        }
+
+        bool firstUse = planned.SourcePass == "<external>"
+                        && !_initializedImages[imageIndex];
         VkImageMemoryBarrier2 barrier = new()
         {
             SType = VkStructureType.ImageMemoryBarrier2,
-            SrcStageMask = VkPipelineStageFlags2.None,
-            SrcAccessMask = VkAccessFlags2.None,
-            DstStageMask = VkPipelineStageFlags2.ColorAttachmentOutput,
-            DstAccessMask =
-                VkAccessFlags2.ColorAttachmentRead
-                | VkAccessFlags2.ColorAttachmentWrite,
-            OldLayout = _initializedImages[imageIndex]
-                ? VkImageLayout.PresentSourceKhr
-                : VkImageLayout.Undefined,
-            NewLayout = VkImageLayout.ColorAttachmentOptimal,
+            SrcStageMask = firstUse
+                ? VkPipelineStageFlags2.None
+                : MapStage(planned.SourceStage),
+            SrcAccessMask = firstUse
+                ? VkAccessFlags2.None
+                : MapAccess(planned.SourceAccess),
+            DstStageMask = MapStage(planned.DestinationStage),
+            DstAccessMask = MapAccess(planned.DestinationAccess),
+            OldLayout = firstUse
+                ? VkImageLayout.Undefined
+                : MapLayout(planned.OldLayout),
+            NewLayout = MapLayout(planned.NewLayout),
             SrcQueueFamilyIndex = QueueFamilyIgnored,
             DstQueueFamilyIndex = QueueFamilyIgnored,
             Image = _swapchain.Images[(int)imageIndex],
@@ -466,8 +491,10 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
         _cmdPipelineBarrier2(_commandBuffer, &dependency);
     }
 
-    private void BeginClearRendering(
+    private void BeginRendering(
         uint imageIndex,
+        LoadOp load,
+        StoreOp store,
         float red,
         float green,
         float blue)
@@ -477,8 +504,19 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
             SType = VkStructureType.RenderingAttachmentInfo,
             ImageView = _imageViews[imageIndex],
             ImageLayout = VkImageLayout.ColorAttachmentOptimal,
-            LoadOp = VkAttachmentLoadOp.Clear,
-            StoreOp = VkAttachmentStoreOp.Store
+            LoadOp = load switch
+            {
+                LoadOp.Load => VkAttachmentLoadOp.Load,
+                LoadOp.Clear => VkAttachmentLoadOp.Clear,
+                LoadOp.DontCare => VkAttachmentLoadOp.DontCare,
+                _ => throw new ArgumentOutOfRangeException(nameof(load))
+            },
+            StoreOp = store switch
+            {
+                StoreOp.Store => VkAttachmentStoreOp.Store,
+                StoreOp.DontCare => VkAttachmentStoreOp.DontCare,
+                _ => throw new ArgumentOutOfRangeException(nameof(store))
+            }
         };
         attachment.ClearValue.Float32[0] = red;
         attachment.ClearValue.Float32[1] = green;
@@ -499,29 +537,243 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
         _cmdBeginRendering(_commandBuffer, &renderingInfo);
     }
 
-    private void TransitionToPresent(uint imageIndex)
+    private static CompiledRenderGraph BuildFrameGraph(
+        VulkanSwapchain swapchain,
+        bool drawTriangle)
     {
-        VkImageMemoryBarrier2 barrier = new()
+        RenderGraphBuilder graph = new();
+        RenderImage<ColorTarget> color = graph.ImportImage<ColorTarget>(
+            "Swapchain.Color",
+            new(
+                ToPixelFormat(swapchain.SurfaceFormat.Format),
+                ResourceSize2D.Absolute(
+                    swapchain.Extent.Width,
+                    swapchain.Extent.Height),
+                ImageUsage.ColorAttachment | ImageUsage.Present,
+                Transient: false),
+            ImageAccess.Present());
+
+        graph.Pass<FramePassData>("Frame.Clear", pass =>
         {
-            SType = VkStructureType.ImageMemoryBarrier2,
-            SrcStageMask = VkPipelineStageFlags2.ColorAttachmentOutput,
-            SrcAccessMask = VkAccessFlags2.ColorAttachmentWrite,
-            DstStageMask = VkPipelineStageFlags2.None,
-            DstAccessMask = VkAccessFlags2.None,
-            OldLayout = VkImageLayout.ColorAttachmentOptimal,
-            NewLayout = VkImageLayout.PresentSourceKhr,
-            SrcQueueFamilyIndex = QueueFamilyIgnored,
-            DstQueueFamilyIndex = QueueFamilyIgnored,
-            Image = _swapchain.Images[(int)imageIndex],
-            SubresourceRange = ColorSubresourceRange()
-        };
-        VkDependencyInfo dependency = new()
+            pass.Write(
+                color,
+                ImageAccess.ColorAttachment(
+                    LoadOp.Clear,
+                    StoreOp.Store));
+            pass.Execute(static (
+                ref RenderGraphCommandContext _,
+                in FramePassData _) =>
+            {
+            });
+        });
+
+        if (drawTriangle)
         {
-            SType = VkStructureType.DependencyInfo,
-            ImageMemoryBarrierCount = 1,
-            PImageMemoryBarriers = &barrier
+            graph.Pass<FramePassData>("Frame.Triangle", pass =>
+            {
+                pass.ReadWrite(
+                    color,
+                    ImageAccess.ColorAttachment(
+                        LoadOp.Load,
+                        StoreOp.Store));
+                pass.Execute(static (
+                    ref RenderGraphCommandContext commands,
+                    in FramePassData _) =>
+                    commands
+                        .GetBackend<IVulkanRenderGraphCommands>()
+                        .DrawTriangle());
+            });
+        }
+
+        graph.Pass<FramePassData>("Frame.Present", pass =>
+        {
+            pass.Read(color, ImageAccess.Present());
+            pass.SideEffect();
+            pass.Execute(static (
+                ref RenderGraphCommandContext _,
+                in FramePassData _) =>
+            {
+            });
+        });
+        return graph.Compile();
+    }
+
+    private static PixelFormat ToPixelFormat(VkFormat format) =>
+        format switch
+        {
+            VkFormat.B8G8R8A8Srgb => PixelFormat.Bgra8Srgb,
+            _ => throw new NotSupportedException(
+                $"The P1 frame graph does not map swapchain format {format}.")
         };
-        _cmdPipelineBarrier2(_commandBuffer, &dependency);
+
+    private static VkPipelineStageFlags2 MapStage(RenderPipelineStage stage)
+    {
+        VkPipelineStageFlags2 result = VkPipelineStageFlags2.None;
+        Add(RenderPipelineStage.Top, VkPipelineStageFlags2.TopOfPipe);
+        Add(RenderPipelineStage.DrawIndirect, VkPipelineStageFlags2.DrawIndirect);
+        Add(RenderPipelineStage.VertexInput, VkPipelineStageFlags2.VertexInput);
+        Add(RenderPipelineStage.VertexShader, VkPipelineStageFlags2.VertexShader);
+        Add(RenderPipelineStage.FragmentShader, VkPipelineStageFlags2.FragmentShader);
+        Add(RenderPipelineStage.EarlyDepthStencil, VkPipelineStageFlags2.EarlyFragmentTests);
+        Add(RenderPipelineStage.LateDepthStencil, VkPipelineStageFlags2.LateFragmentTests);
+        Add(RenderPipelineStage.ColorAttachmentOutput, VkPipelineStageFlags2.ColorAttachmentOutput);
+        Add(RenderPipelineStage.ComputeShader, VkPipelineStageFlags2.ComputeShader);
+        Add(RenderPipelineStage.Transfer, VkPipelineStageFlags2.Transfer);
+        Add(RenderPipelineStage.Bottom, VkPipelineStageFlags2.BottomOfPipe);
+        Add(RenderPipelineStage.Host, VkPipelineStageFlags2.Host);
+        Add(RenderPipelineStage.AllGraphics, VkPipelineStageFlags2.AllGraphics);
+        Add(RenderPipelineStage.AllCommands, VkPipelineStageFlags2.AllCommands);
+        return result;
+
+        void Add(RenderPipelineStage source, VkPipelineStageFlags2 destination)
+        {
+            if ((stage & source) != 0)
+            {
+                result |= destination;
+            }
+        }
+    }
+
+    private static VkAccessFlags2 MapAccess(RenderAccessFlags access)
+    {
+        VkAccessFlags2 result = VkAccessFlags2.None;
+        Add(RenderAccessFlags.IndirectCommandRead, VkAccessFlags2.IndirectCommandRead);
+        Add(RenderAccessFlags.IndexRead, VkAccessFlags2.IndexRead);
+        Add(RenderAccessFlags.VertexAttributeRead, VkAccessFlags2.VertexAttributeRead);
+        Add(RenderAccessFlags.UniformRead, VkAccessFlags2.UniformRead);
+        Add(RenderAccessFlags.ShaderRead, VkAccessFlags2.ShaderRead);
+        Add(RenderAccessFlags.ShaderWrite, VkAccessFlags2.ShaderWrite);
+        Add(RenderAccessFlags.ColorAttachmentRead, VkAccessFlags2.ColorAttachmentRead);
+        Add(RenderAccessFlags.ColorAttachmentWrite, VkAccessFlags2.ColorAttachmentWrite);
+        Add(RenderAccessFlags.DepthStencilRead, VkAccessFlags2.DepthStencilRead);
+        Add(RenderAccessFlags.DepthStencilWrite, VkAccessFlags2.DepthStencilWrite);
+        Add(RenderAccessFlags.TransferRead, VkAccessFlags2.TransferRead);
+        Add(RenderAccessFlags.TransferWrite, VkAccessFlags2.TransferWrite);
+        Add(RenderAccessFlags.HostRead, VkAccessFlags2.HostRead);
+        Add(RenderAccessFlags.HostWrite, VkAccessFlags2.HostWrite);
+        Add(RenderAccessFlags.MemoryRead, VkAccessFlags2.MemoryRead);
+        Add(RenderAccessFlags.MemoryWrite, VkAccessFlags2.MemoryWrite);
+        return result;
+
+        void Add(RenderAccessFlags source, VkAccessFlags2 destination)
+        {
+            if ((access & source) != 0)
+            {
+                result |= destination;
+            }
+        }
+    }
+
+    private static VkImageLayout MapLayout(RenderImageLayout? layout) =>
+        layout switch
+        {
+            RenderImageLayout.Undefined => VkImageLayout.Undefined,
+            RenderImageLayout.General => VkImageLayout.General,
+            RenderImageLayout.ColorAttachment => VkImageLayout.ColorAttachmentOptimal,
+            RenderImageLayout.DepthStencilAttachment => VkImageLayout.DepthStencilAttachmentOptimal,
+            RenderImageLayout.DepthStencilReadOnly => VkImageLayout.DepthStencilReadOnlyOptimal,
+            RenderImageLayout.ShaderReadOnly => VkImageLayout.ShaderReadOnlyOptimal,
+            RenderImageLayout.TransferSource => VkImageLayout.TransferSourceOptimal,
+            RenderImageLayout.TransferDestination => VkImageLayout.TransferDestinationOptimal,
+            RenderImageLayout.Present => VkImageLayout.PresentSourceKhr,
+            null => VkImageLayout.Undefined,
+            _ => throw new ArgumentOutOfRangeException(nameof(layout))
+        };
+
+    private readonly struct FramePassData;
+
+    private sealed class FrameGraphSink(VulkanClearRenderer renderer)
+        : IRenderGraphCommandSink, IVulkanRenderGraphCommands
+    {
+        private readonly VulkanClearRenderer _renderer = renderer;
+        private VkCommandBuffer _commandBuffer;
+        private uint _imageIndex;
+        private float _red;
+        private float _green;
+        private float _blue;
+        private bool _rendering;
+
+        public void BeginFrame(
+            VkCommandBuffer commandBuffer,
+            uint imageIndex,
+            float red,
+            float green,
+            float blue)
+        {
+            _commandBuffer = commandBuffer;
+            _imageIndex = imageIndex;
+            _red = red;
+            _green = green;
+            _blue = blue;
+            _rendering = false;
+        }
+
+        public void EndFrame()
+        {
+            if (_rendering)
+            {
+                throw new InvalidOperationException(
+                    "A Vulkan dynamic-rendering scope remained open after graph execution.");
+            }
+
+            _commandBuffer = default;
+        }
+
+        public void ApplyBarrier(in RenderBarrier barrier) =>
+            _renderer.ApplyBarrier(_imageIndex, in barrier);
+
+        public void BeginPass(CompiledRenderPass pass)
+        {
+            for (int index = 0; index < pass.Accesses.Count; index++)
+            {
+                CompiledResourceAccess access = pass.Accesses[index];
+                if (access is
+                    {
+                        Resource: "Swapchain.Color",
+                        Layout: RenderImageLayout.ColorAttachment
+                    })
+                {
+                    _renderer.BeginRendering(
+                        _imageIndex,
+                        access.Load,
+                        access.Store,
+                        _red,
+                        _green,
+                        _blue);
+                    _rendering = true;
+                    return;
+                }
+            }
+        }
+
+        public void DrawTriangle()
+        {
+            if (!_rendering)
+            {
+                throw new InvalidOperationException(
+                    "DrawTriangle requires an active dynamic-rendering scope.");
+            }
+
+            VulkanTrianglePipeline pipeline = _renderer._trianglePipeline
+                ?? throw new InvalidOperationException(
+                    "The frame graph requested a triangle without a pipeline.");
+            pipeline.Draw(
+                _commandBuffer,
+                _renderer._swapchain.Extent);
+        }
+
+        public void Command(string passName, string command) =>
+            throw new NotSupportedException(
+                $"String render command '{command}' from '{passName}' is not supported by the Vulkan sink.");
+
+        public void EndPass(CompiledRenderPass pass)
+        {
+            if (_rendering)
+            {
+                _renderer._cmdEndRendering(_commandBuffer);
+                _rendering = false;
+            }
+        }
     }
 
     private static VkImageSubresourceRange ColorSubresourceRange() =>

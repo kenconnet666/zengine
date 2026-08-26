@@ -35,6 +35,7 @@ internal static class RenderGraphCompiler
             dependencies,
             live);
         CompiledRenderPass[] compiledPasses = BuildCompiledPasses(
+            resources,
             passes,
             dependencies,
             live,
@@ -257,6 +258,7 @@ internal static class RenderGraphCompiler
     }
 
     private static CompiledRenderPass[] BuildCompiledPasses(
+        IReadOnlyList<RenderResourceDefinition> resources,
         IReadOnlyList<RenderPassDefinition> passes,
         HashSet<int>[] dependencies,
         bool[] live,
@@ -271,10 +273,16 @@ internal static class RenderGraphCompiler
                 .Order()
                 .Select(dependency => passes[dependency].Name)
                 .ToArray();
+            CompiledResourceAccess[] accesses = pass.Accesses
+                .Select(access => ToCompiledAccess(
+                    resources[access.ResourceIndex],
+                    access))
+                .ToArray();
             result[index] = new(
                 pass.Name,
                 pass.Index,
                 names,
+                accesses,
                 pass.Executor);
         }
 
@@ -290,6 +298,13 @@ internal static class RenderGraphCompiler
         out ResourceLifetime[] lifetimes)
     {
         PreviousAccess?[] previous = new PreviousAccess?[resources.Count];
+        for (int resourceIndex = 0; resourceIndex < resources.Count; resourceIndex++)
+        {
+            if (resources[resourceIndex].InitialAccess is { } initialAccess)
+            {
+                previous[resourceIndex] = new(-1, initialAccess);
+            }
+        }
         int[] firstUse = new int[resources.Count];
         int[] lastUse = new int[resources.Count];
         Array.Fill(firstUse, -1);
@@ -315,7 +330,9 @@ internal static class RenderGraphCompiler
                     RenderBarrier barrier = new(
                         resource.Name,
                         ToPublicKind(resource.Kind),
-                        passes[source.PassIndex].Name,
+                        source.PassIndex < 0
+                            ? "<external>"
+                            : passes[source.PassIndex].Name,
                         pass.Name,
                         source.Access.Stage,
                         source.Access.Access,
@@ -441,6 +458,26 @@ internal static class RenderGraphCompiler
         kind == RenderResourceKind.Image
             ? CompiledResourceKind.Image
             : CompiledResourceKind.Buffer;
+
+    private static CompiledResourceAccess ToCompiledAccess(
+        RenderResourceDefinition resource,
+        RenderResourceAccess access) =>
+        new(
+            access.ResourceIndex,
+            resource.Name,
+            ToPublicKind(resource.Kind),
+            access.Mode switch
+            {
+                RenderAccessMode.Read => CompiledAccessMode.Read,
+                RenderAccessMode.Write => CompiledAccessMode.Write,
+                RenderAccessMode.ReadWrite => CompiledAccessMode.ReadWrite,
+                _ => throw new ArgumentOutOfRangeException(nameof(access))
+            },
+            access.Stage,
+            access.Access,
+            access.Layout,
+            access.Load,
+            access.Store);
 
     private static bool IsTransient(RenderResourceDefinition resource) =>
         !resource.Imported

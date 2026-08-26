@@ -16,7 +16,13 @@ public enum VkComponentSwizzle : int
 public enum VkImageLayout : int
 {
     Undefined = 0,
+    General = 1,
     ColorAttachmentOptimal = 2,
+    DepthStencilAttachmentOptimal = 3,
+    DepthStencilReadOnlyOptimal = 4,
+    ShaderReadOnlyOptimal = 5,
+    TransferSourceOptimal = 6,
+    TransferDestinationOptimal = 7,
     PresentSourceKhr = 1000001002
 }
 
@@ -95,8 +101,18 @@ public enum VkPipelineStageFlags2 : ulong
 {
     None = 0,
     TopOfPipe = 0x00000001,
+    DrawIndirect = 0x00000002,
+    VertexInput = 0x00000004,
+    VertexShader = 0x00000008,
+    FragmentShader = 0x00000080,
+    EarlyFragmentTests = 0x00000100,
+    LateFragmentTests = 0x00000200,
     ColorAttachmentOutput = 0x00000400,
+    ComputeShader = 0x00000800,
+    Transfer = 0x00001000,
     BottomOfPipe = 0x00002000,
+    Host = 0x00004000,
+    AllGraphics = 0x00008000,
     AllCommands = 0x00010000
 }
 
@@ -104,8 +120,22 @@ public enum VkPipelineStageFlags2 : ulong
 public enum VkAccessFlags2 : ulong
 {
     None = 0,
+    IndirectCommandRead = 0x00000001,
+    IndexRead = 0x00000002,
+    VertexAttributeRead = 0x00000004,
+    UniformRead = 0x00000008,
+    ShaderRead = 0x00000020,
+    ShaderWrite = 0x00000040,
     ColorAttachmentRead = 0x00000080,
-    ColorAttachmentWrite = 0x00000100
+    ColorAttachmentWrite = 0x00000100,
+    DepthStencilRead = 0x00000200,
+    DepthStencilWrite = 0x00000400,
+    TransferRead = 0x00000800,
+    TransferWrite = 0x00001000,
+    HostRead = 0x00002000,
+    HostWrite = 0x00004000,
+    MemoryRead = 0x00008000,
+    MemoryWrite = 0x00010000
 }
 
 [StructLayout(LayoutKind.Sequential)]
