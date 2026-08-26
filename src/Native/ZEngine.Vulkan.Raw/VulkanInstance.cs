@@ -1,4 +1,5 @@
 using System.Text;
+using System.Runtime.InteropServices;
 using ZEngine.Vulkan.Raw.Generated;
 
 namespace ZEngine.Vulkan.Raw;
@@ -44,9 +45,10 @@ public sealed unsafe class VulkanInstance : IDisposable
 
     public static VulkanInstance Create(
         VulkanLoader loader,
-        VulkanApiVersion? requestedVersion = null)
+        VulkanInstanceOptions? options = null)
     {
         ArgumentNullException.ThrowIfNull(loader);
+        options ??= VulkanInstanceOptions.Default;
 
         nint proc = loader.GetInstanceProcAddress(
             default,
@@ -60,33 +62,60 @@ public sealed unsafe class VulkanInstance : IDisposable
         var createInstance =
             (delegate* unmanaged<VkInstanceCreateInfo*, void*, VkInstance*, VkResult>)proc;
 
-        ReadOnlySpan<byte> applicationName = "ZEngine\0"u8;
-        ReadOnlySpan<byte> engineName = "ZEngine\0"u8;
-        fixed (byte* applicationNamePointer = applicationName)
-        fixed (byte* engineNamePointer = engineName)
+        nint[] allocatedExtensions = new nint[options.Extensions.Count];
+        byte** extensionPointers =
+            stackalloc byte*[Math.Max(1, options.Extensions.Count)];
+
+        try
         {
-            VkApplicationInfo applicationInfo = new()
+            for (int index = 0; index < options.Extensions.Count; index++)
             {
-                SType = VkStructureType.ApplicationInfo,
-                PApplicationName = applicationNamePointer,
-                ApplicationVersion = VulkanApiVersion.Create(0, 1, 0).Value,
-                PEngineName = engineNamePointer,
-                EngineVersion = VulkanApiVersion.Create(0, 1, 0).Value,
-                ApiVersion = (requestedVersion
-                              ?? VulkanApiVersion.Create(1, 4, 0)).Value
-            };
+                nint pointer = Marshal.StringToCoTaskMemUTF8(
+                    options.Extensions[index]);
+                allocatedExtensions[index] = pointer;
+                extensionPointers[index] = (byte*)pointer;
+            }
 
-            VkInstanceCreateInfo createInfo = new()
+            ReadOnlySpan<byte> applicationName = "ZEngine\0"u8;
+            ReadOnlySpan<byte> engineName = "ZEngine\0"u8;
+            fixed (byte* applicationNamePointer = applicationName)
+            fixed (byte* engineNamePointer = engineName)
             {
-                SType = VkStructureType.InstanceCreateInfo,
-                PApplicationInfo = &applicationInfo
-            };
+                VkApplicationInfo applicationInfo = new()
+                {
+                    SType = VkStructureType.ApplicationInfo,
+                    PApplicationName = applicationNamePointer,
+                    ApplicationVersion = VulkanApiVersion.Create(0, 1, 0).Value,
+                    PEngineName = engineNamePointer,
+                    EngineVersion = VulkanApiVersion.Create(0, 1, 0).Value,
+                    ApiVersion = options.ApiVersion.Value
+                };
 
-            VkInstance handle = default;
-            VkResult result = createInstance(&createInfo, null, &handle);
-            VulkanException.ThrowIfFailed(result, "vkCreateInstance");
+                VkInstanceCreateInfo createInfo = new()
+                {
+                    SType = VkStructureType.InstanceCreateInfo,
+                    PApplicationInfo = &applicationInfo,
+                    EnabledExtensionCount = (uint)options.Extensions.Count,
+                    PpEnabledExtensionNames =
+                        options.Extensions.Count == 0 ? null : extensionPointers
+                };
 
-            return new(loader, handle);
+                VkInstance handle = default;
+                VkResult result = createInstance(&createInfo, null, &handle);
+                VulkanException.ThrowIfFailed(result, "vkCreateInstance");
+
+                return new(loader, handle);
+            }
+        }
+        finally
+        {
+            foreach (nint pointer in allocatedExtensions)
+            {
+                if (pointer != 0)
+                {
+                    Marshal.FreeCoTaskMem(pointer);
+                }
+            }
         }
     }
 
@@ -135,6 +164,18 @@ public sealed unsafe class VulkanInstance : IDisposable
             _handle,
             physicalDevice,
             enableSwapchain);
+    }
+
+    public VulkanSurface CreateWin32Surface(
+        nint nativeInstance,
+        nint nativeWindow)
+    {
+        ThrowIfDisposed();
+        return VulkanSurface.CreateWin32(
+            _loader,
+            _handle,
+            nativeInstance,
+            nativeWindow);
     }
 
     public void Dispose()

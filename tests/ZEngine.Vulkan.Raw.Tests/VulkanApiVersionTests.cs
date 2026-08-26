@@ -1,5 +1,6 @@
 namespace ZEngine.Vulkan.Raw.Tests;
 
+using ZEngine.Platform.Win32;
 using ZEngine.Vulkan.Raw.Generated;
 using Xunit;
 
@@ -64,5 +65,45 @@ public sealed class VulkanApiVersionTests
 
         Assert.False(device.Handle.IsNull);
         Assert.False(device.GraphicsQueue.IsNull);
+    }
+
+    [Fact]
+    public void CreatesHiddenWin32SurfaceAndSwapchain()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        using Win32Window window = Win32Window.Create(
+            "ZEngine Swapchain Test",
+            640,
+            360);
+        using VulkanLoader loader = VulkanLoader.OpenSystem();
+        using VulkanInstance instance = VulkanInstance.Create(
+            loader,
+            VulkanInstanceOptions.Win32Surface);
+        VulkanPhysicalDeviceInfo physicalDevice =
+            Assert.Single(instance.EnumeratePhysicalDevices());
+        using VulkanSurface surface = instance.CreateWin32Surface(
+            window.NativeInstance,
+            window.NativeHandle);
+
+        Assert.True(surface.SupportsPresentation(physicalDevice));
+
+        using VulkanDevice device = instance.CreateGraphicsDevice(
+            physicalDevice,
+            enableSwapchain: true);
+        using VulkanSwapchain swapchain = surface.CreateSwapchain(
+            device,
+            physicalDevice,
+            window.ClientSize.Width,
+            window.ClientSize.Height);
+
+        Assert.False(surface.Handle.IsNull);
+        Assert.False(swapchain.Handle.IsNull);
+        Assert.True(swapchain.Images.Count >= 2);
+        Assert.True(swapchain.Extent.Width > 0);
+        Assert.True(swapchain.Extent.Height > 0);
     }
 }

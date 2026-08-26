@@ -6,18 +6,21 @@ namespace ZEngine.Vulkan.Raw;
 public sealed unsafe class VulkanDevice : IDisposable
 {
     private readonly delegate* unmanaged<VkDevice, void*, void> _destroyDevice;
+    private readonly delegate* unmanaged<VkDevice, byte*, nint> _getDeviceProcAddress;
     private VkDevice _handle;
 
     private VulkanDevice(
         VkDevice handle,
         VkQueue graphicsQueue,
         uint graphicsQueueFamilyIndex,
-        delegate* unmanaged<VkDevice, void*, void> destroyDevice)
+        delegate* unmanaged<VkDevice, void*, void> destroyDevice,
+        delegate* unmanaged<VkDevice, byte*, nint> getDeviceProcAddress)
     {
         _handle = handle;
         GraphicsQueue = graphicsQueue;
         GraphicsQueueFamilyIndex = graphicsQueueFamilyIndex;
         _destroyDevice = destroyDevice;
+        _getDeviceProcAddress = getDeviceProcAddress;
     }
 
     public VkDevice Handle => _handle;
@@ -122,8 +125,15 @@ public sealed unsafe class VulkanDevice : IDisposable
                 handle,
                 queue,
                 physicalDevice.GraphicsQueueFamilyIndex,
-                (delegate* unmanaged<VkDevice, void*, void>)destroyProc);
+                (delegate* unmanaged<VkDevice, void*, void>)destroyProc,
+                getDeviceProcAddress);
         }
+    }
+
+    internal nint GetProcAddress(ReadOnlySpan<byte> name)
+    {
+        ObjectDisposedException.ThrowIf(_handle.IsNull, this);
+        return GetDeviceProc(_getDeviceProcAddress, _handle, name);
     }
 
     public void Dispose()

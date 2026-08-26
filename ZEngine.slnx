@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/Foundation/ZEngine.Core/ZEngine.Core.csproj" />
     <Project Path="src/Native/ZEngine.Platform.Abstractions/ZEngine.Platform.Abstractions.csproj" />
+    <Project Path="src/Native/ZEngine.Platform.Win32/ZEngine.Platform.Win32.csproj" />
     <Project Path="src/Native/ZEngine.Vulkan.Registry/ZEngine.Vulkan.Registry.csproj" />
     <Project Path="src/Native/ZEngine.Vulkan.RegistryTool/ZEngine.Vulkan.RegistryTool.csproj" />
     <Project Path="src/Native/ZEngine.Vulkan.Raw/ZEngine.Vulkan.Raw.csproj" />

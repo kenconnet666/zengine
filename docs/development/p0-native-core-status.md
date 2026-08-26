@@ -19,6 +19,11 @@ Status: P0A accepted, P0B pending.
 - Physical-device enumeration and property report.
 - Graphics queue-family selection.
 - Logical-device and graphics-queue creation.
+- Win32 window class, hidden/visible window creation and message pump.
+- VkSurfaceKHR creation and presentation-support query.
+- Surface format, present mode and capability query.
+- VK_KHR_swapchain logical-device enablement.
+- Swapchain creation and image enumeration.
 - Unit and hardware smoke tests.
 
 ## Pinned Vulkan registry
@@ -33,19 +38,19 @@ Status: P0A accepted, P0B pending.
 ## Validation evidence
 
 - dotnet build ZEngine.slnx -c Debug: passed with zero warnings and zero errors.
-- dotnet test using Microsoft Testing Platform: six passed, zero failed.
+- dotnet test using Microsoft Testing Platform: seven passed, zero failed.
 - ZEngine.Host: detected Windows x64 and win-x64.
 - Vulkan Raw probe: loaded vulkan-1.dll through NativeLibrary and reported Vulkan loader API 1.4.341.
 - Vulkan Instance probe: enumerated AMD Radeon RX 9070 GRE as Vulkan 1.4.349, vendor 0x1002, device 0x7550.
 - Vulkan Device probe: selected graphics queue family 0 and created a logical device and graphics queue.
+- Hidden-window test: created Win32 VkSurfaceKHR and a swapchain with at least two images.
+- Visible-window smoke: created a 944x501 B8G8R8A8Srgb FIFO swapchain with three images and pumped events for two seconds.
+- Self-contained win-x64 Release publish: produced and executed artifacts/publish/win-x64/ZEngine.Host.exe.
 - HelloZEngine: executed successfully.
 
 ## Remaining P0B
 
 - Generated core enum, bitmask, structure and remaining command signatures.
-- Win32 window and message pump.
 - Debug messenger and validation layer.
 - Extended physical-device feature/capability report.
-- Window surface and swapchain.
 - Validation-layer installation and zero-error triangle.
-- Self-contained publish acceptance.

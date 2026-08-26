@@ -22,7 +22,9 @@ public enum VkStructureType : int
     ApplicationInfo = 0,
     InstanceCreateInfo = 1,
     DeviceQueueCreateInfo = 2,
-    DeviceCreateInfo = 3
+    DeviceCreateInfo = 3,
+    SwapchainCreateInfoKhr = 1000001000,
+    Win32SurfaceCreateInfoKhr = 1000009000
 }
 
 public enum VkPhysicalDeviceType : int
@@ -34,6 +36,32 @@ public enum VkPhysicalDeviceType : int
     Cpu = 4
 }
 
+public enum VkFormat : int
+{
+    Undefined = 0,
+    B8G8R8A8Unorm = 44,
+    B8G8R8A8Srgb = 50
+}
+
+public enum VkColorSpaceKhr : int
+{
+    SrgbNonlinear = 0
+}
+
+public enum VkPresentModeKhr : int
+{
+    Immediate = 0,
+    Mailbox = 1,
+    Fifo = 2,
+    FifoRelaxed = 3
+}
+
+public enum VkSharingMode : int
+{
+    Exclusive = 0,
+    Concurrent = 1
+}
+
 [Flags]
 public enum VkQueueFlags : uint
 {
@@ -41,6 +69,36 @@ public enum VkQueueFlags : uint
     Compute = 0x00000002,
     Transfer = 0x00000004,
     SparseBinding = 0x00000008
+}
+
+[Flags]
+public enum VkImageUsageFlags : uint
+{
+    TransferSource = 0x00000001,
+    TransferDestination = 0x00000002,
+    Sampled = 0x00000004,
+    Storage = 0x00000008,
+    ColorAttachment = 0x00000010,
+    DepthStencilAttachment = 0x00000020
+}
+
+[Flags]
+public enum VkSurfaceTransformFlagsKhr : uint
+{
+    Identity = 0x00000001,
+    Rotate90 = 0x00000002,
+    Rotate180 = 0x00000004,
+    Rotate270 = 0x00000008,
+    Inherit = 0x00000100
+}
+
+[Flags]
+public enum VkCompositeAlphaFlagsKhr : uint
+{
+    Opaque = 0x00000001,
+    PreMultiplied = 0x00000002,
+    PostMultiplied = 0x00000004,
+    Inherit = 0x00000008
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -103,6 +161,13 @@ public struct VkExtent3D
 }
 
 [StructLayout(LayoutKind.Sequential)]
+public struct VkExtent2D
+{
+    public uint Width;
+    public uint Height;
+}
+
+[StructLayout(LayoutKind.Sequential)]
 public struct VkQueueFamilyProperties
 {
     public VkQueueFlags QueueFlags;
@@ -129,4 +194,59 @@ public unsafe struct VkPhysicalDevicePropertiesBuffer
     public fixed byte DeviceName[256];
     public fixed byte PipelineCacheUuid[16];
     public fixed byte RemainingProperties[2048];
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct VkWin32SurfaceCreateInfoKhr
+{
+    public VkStructureType SType;
+    public void* PNext;
+    public uint Flags;
+    public nint Instance;
+    public nint Window;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct VkSurfaceCapabilitiesKhr
+{
+    public uint MinImageCount;
+    public uint MaxImageCount;
+    public VkExtent2D CurrentExtent;
+    public VkExtent2D MinImageExtent;
+    public VkExtent2D MaxImageExtent;
+    public uint MaxImageArrayLayers;
+    public VkSurfaceTransformFlagsKhr SupportedTransforms;
+    public VkSurfaceTransformFlagsKhr CurrentTransform;
+    public VkCompositeAlphaFlagsKhr SupportedCompositeAlpha;
+    public VkImageUsageFlags SupportedUsageFlags;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct VkSurfaceFormatKhr
+{
+    public VkFormat Format;
+    public VkColorSpaceKhr ColorSpace;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct VkSwapchainCreateInfoKhr
+{
+    public VkStructureType SType;
+    public void* PNext;
+    public uint Flags;
+    public ZEngine.Vulkan.Raw.Generated.VkSurfaceKHR Surface;
+    public uint MinImageCount;
+    public VkFormat ImageFormat;
+    public VkColorSpaceKhr ImageColorSpace;
+    public VkExtent2D ImageExtent;
+    public uint ImageArrayLayers;
+    public VkImageUsageFlags ImageUsage;
+    public VkSharingMode ImageSharingMode;
+    public uint QueueFamilyIndexCount;
+    public uint* PQueueFamilyIndices;
+    public VkSurfaceTransformFlagsKhr PreTransform;
+    public VkCompositeAlphaFlagsKhr CompositeAlpha;
+    public VkPresentModeKhr PresentMode;
+    public uint Clipped;
+    public ZEngine.Vulkan.Raw.Generated.VkSwapchainKHR OldSwapchain;
 }
