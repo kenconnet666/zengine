@@ -8,13 +8,15 @@ public enum VkResult : int
     NotReady = 1,
     Timeout = 2,
     Incomplete = 5,
+    SuboptimalKhr = 1000001003,
     ErrorOutOfHostMemory = -1,
     ErrorOutOfDeviceMemory = -2,
     ErrorInitializationFailed = -3,
     ErrorLayerNotPresent = -6,
     ErrorExtensionNotPresent = -7,
     ErrorFeatureNotPresent = -8,
-    ErrorIncompatibleDriver = -9
+    ErrorIncompatibleDriver = -9,
+    ErrorOutOfDateKhr = -1000001004
 }
 
 public enum VkStructureType : int
@@ -23,8 +25,22 @@ public enum VkStructureType : int
     InstanceCreateInfo = 1,
     DeviceQueueCreateInfo = 2,
     DeviceCreateInfo = 3,
+    FenceCreateInfo = 8,
+    SemaphoreCreateInfo = 9,
+    ImageViewCreateInfo = 15,
+    CommandPoolCreateInfo = 39,
+    CommandBufferAllocateInfo = 40,
+    CommandBufferBeginInfo = 42,
     SwapchainCreateInfoKhr = 1000001000,
-    Win32SurfaceCreateInfoKhr = 1000009000
+    PresentInfoKhr = 1000001001,
+    Win32SurfaceCreateInfoKhr = 1000009000,
+    ImageMemoryBarrier2 = 1000314001,
+    DependencyInfo = 1000314003,
+    SemaphoreSubmitInfo = 1000314005,
+    CommandBufferSubmitInfo = 1000314006,
+    SubmitInfo2 = 1000314004,
+    RenderingInfo = 1000044000,
+    RenderingAttachmentInfo = 1000044001
 }
 
 public enum VkPhysicalDeviceType : int

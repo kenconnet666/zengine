@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZEngine.Graphics.Vulkan</RootNamespace>
+    <AssemblyName>ZEngine.Graphics.Vulkan</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Native\ZEngine.Vulkan.Raw\ZEngine.Vulkan.Raw.csproj" />
+  </ItemGroup>
+</Project>

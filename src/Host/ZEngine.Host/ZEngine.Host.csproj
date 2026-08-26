@@ -6,9 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Graphics\ZEngine.Graphics.Vulkan\ZEngine.Graphics.Vulkan.csproj" />
     <ProjectReference Include="..\..\Foundation\ZEngine.Core\ZEngine.Core.csproj" />
     <ProjectReference Include="..\..\Native\ZEngine.Platform.Abstractions\ZEngine.Platform.Abstractions.csproj" />
     <ProjectReference Include="..\..\Native\ZEngine.Platform.Win32\ZEngine.Platform.Win32.csproj" />
     <ProjectReference Include="..\..\Native\ZEngine.Vulkan.Raw\ZEngine.Vulkan.Raw.csproj" />
   </ItemGroup>
+
 </Project>

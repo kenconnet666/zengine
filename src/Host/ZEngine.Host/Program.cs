@@ -1,4 +1,5 @@
 using ZEngine.Core;
+using ZEngine.Graphics.Vulkan;
 using ZEngine.Platform;
 using ZEngine.Platform.Win32;
 using ZEngine.Vulkan.Raw;
@@ -77,9 +78,15 @@ try
             + $"{swapchain.SurfaceFormat.Format}, {swapchain.PresentMode}, "
             + $"{swapchain.Images.Count} images.");
 
+        using VulkanClearRenderer renderer = new(device, swapchain);
         DateTime deadline = DateTime.UtcNow.AddSeconds(2);
+        float phase = 0;
         while (DateTime.UtcNow < deadline && window.PumpEvents())
         {
+            float red = 0.08f + 0.04f * MathF.Sin(phase);
+            float blue = 0.14f + 0.05f * MathF.Cos(phase);
+            renderer.RenderFrame(red, 0.10f, blue);
+            phase += 0.04f;
             Thread.Sleep(16);
         }
     }

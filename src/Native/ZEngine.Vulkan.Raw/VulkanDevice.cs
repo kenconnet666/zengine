@@ -130,7 +130,7 @@ public sealed unsafe class VulkanDevice : IDisposable
         }
     }
 
-    internal nint GetProcAddress(ReadOnlySpan<byte> name)
+    public nint GetProcAddress(ReadOnlySpan<byte> name)
     {
         ObjectDisposedException.ThrowIf(_handle.IsNull, this);
         return GetDeviceProc(_getDeviceProcAddress, _handle, name);
@@ -144,6 +144,17 @@ public sealed unsafe class VulkanDevice : IDisposable
             _handle = default;
             _destroyDevice(handle, null);
         }
+    }
+
+    public void WaitIdle()
+    {
+        ObjectDisposedException.ThrowIf(_handle.IsNull, this);
+        var waitIdle =
+            (delegate* unmanaged<VkDevice, VkResult>)GetProcAddress(
+                "vkDeviceWaitIdle\0"u8);
+        VulkanException.ThrowIfFailed(
+            waitIdle(_handle),
+            "vkDeviceWaitIdle");
     }
 
     private static nint GetDeviceProc(
