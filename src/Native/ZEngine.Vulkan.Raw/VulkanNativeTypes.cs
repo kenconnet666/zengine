@@ -28,6 +28,17 @@ public enum VkStructureType : int
     FenceCreateInfo = 8,
     SemaphoreCreateInfo = 9,
     ImageViewCreateInfo = 15,
+    ShaderModuleCreateInfo = 16,
+    PipelineShaderStageCreateInfo = 18,
+    PipelineVertexInputStateCreateInfo = 19,
+    PipelineInputAssemblyStateCreateInfo = 20,
+    PipelineViewportStateCreateInfo = 22,
+    PipelineRasterizationStateCreateInfo = 23,
+    PipelineMultisampleStateCreateInfo = 24,
+    PipelineColorBlendStateCreateInfo = 26,
+    PipelineDynamicStateCreateInfo = 27,
+    GraphicsPipelineCreateInfo = 28,
+    PipelineLayoutCreateInfo = 30,
     CommandPoolCreateInfo = 39,
     CommandBufferAllocateInfo = 40,
     CommandBufferBeginInfo = 42,
@@ -40,7 +51,8 @@ public enum VkStructureType : int
     CommandBufferSubmitInfo = 1000314006,
     SubmitInfo2 = 1000314004,
     RenderingInfo = 1000044000,
-    RenderingAttachmentInfo = 1000044001
+    RenderingAttachmentInfo = 1000044001,
+    PipelineRenderingCreateInfo = 1000044002
 }
 
 public enum VkPhysicalDeviceType : int

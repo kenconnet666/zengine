@@ -9,3 +9,4 @@
 *.xml text eol=lf
 *.md text eol=lf
 *.ps1 text eol=crlf
+*.spv binary

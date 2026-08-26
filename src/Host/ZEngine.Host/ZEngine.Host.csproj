@@ -13,4 +13,15 @@
     <ProjectReference Include="..\..\Native\ZEngine.Vulkan.Raw\ZEngine.Vulkan.Raw.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\..\..\shaders\compiled\triangle.vert.spv"
+             Link="Shaders\triangle.vert.spv"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\..\shaders\compiled\triangle.frag.spv"
+             Link="Shaders\triangle.frag.spv"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

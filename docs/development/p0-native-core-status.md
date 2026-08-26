@@ -1,6 +1,6 @@
 # P0 Native Core Status
 
-Status: P0A accepted, P0B pending.
+Status: P0 functional slice accepted; validation-layer follow-up pending.
 
 ## Implemented in P0A
 
@@ -29,6 +29,11 @@ Status: P0A accepted, P0B pending.
 - Synchronization2 image layout transitions.
 - Vulkan 1.4 dynamic-rendering clear pass.
 - QueueSubmit2 and QueuePresentKHR frame loop.
+- Locked DXC 1.9.2607 tool bootstrap.
+- HLSL vertex/fragment shader and reproducible SPIR-V output.
+- Shader-module and pipeline-layout creation.
+- Vulkan 1.4 dynamic-rendering graphics pipeline.
+- Dynamic viewport/scissor and vkCmdDraw triangle.
 - Unit and hardware smoke tests.
 
 ## Pinned Vulkan registry
@@ -43,7 +48,7 @@ Status: P0A accepted, P0B pending.
 ## Validation evidence
 
 - dotnet build ZEngine.slnx -c Debug: passed with zero warnings and zero errors.
-- dotnet test using Microsoft Testing Platform: eight passed, zero failed.
+- dotnet test using Microsoft Testing Platform: nine passed, zero failed.
 - ZEngine.Host: detected Windows x64 and win-x64.
 - Vulkan Raw probe: loaded vulkan-1.dll through NativeLibrary and reported Vulkan loader API 1.4.341.
 - Vulkan Instance probe: enumerated AMD Radeon RX 9070 GRE as Vulkan 1.4.349, vendor 0x1002, device 0x7550.
@@ -52,6 +57,9 @@ Status: P0A accepted, P0B pending.
 - Visible-window smoke: created a 944x501 B8G8R8A8Srgb FIFO swapchain with three images and pumped events for two seconds.
 - Self-contained win-x64 Release publish: produced and executed artifacts/publish/win-x64/ZEngine.Host.exe.
 - Hidden render test: cleared and presented two swapchain frames through dynamic rendering.
+- Hidden triangle test: created shader modules and graphics pipeline, drew and presented two frames.
+- Computer Use visual evidence: captured the visible ZEngine Vulkan 1.4 Smoke window with a correctly interpolated RGB triangle.
+- Release self-contained triangle smoke: loaded packaged SPIR-V and presented the same pipeline.
 - HelloZEngine: executed successfully.
 
 ## Remaining P0B
@@ -59,5 +67,4 @@ Status: P0A accepted, P0B pending.
 - Generated core enum, bitmask, structure and remaining command signatures.
 - Debug messenger and validation layer.
 - Extended physical-device feature/capability report.
-- Shader module, graphics pipeline and triangle draw.
 - Validation-layer installation and zero-error rendered frame.

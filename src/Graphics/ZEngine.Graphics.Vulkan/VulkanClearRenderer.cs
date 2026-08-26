@@ -8,6 +8,7 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
     private const uint QueueFamilyIgnored = uint.MaxValue;
     private readonly VulkanDevice _device;
     private readonly VulkanSwapchain _swapchain;
+    private readonly VulkanTrianglePipeline? _trianglePipeline;
     private readonly VkImageView[] _imageViews;
     private readonly bool[] _initializedImages;
     private readonly delegate* unmanaged<VkDevice, VkImageView, void*, void>
@@ -49,10 +50,12 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
 
     public VulkanClearRenderer(
         VulkanDevice device,
-        VulkanSwapchain swapchain)
+        VulkanSwapchain swapchain,
+        VulkanTrianglePipeline? trianglePipeline = null)
     {
         _device = device;
         _swapchain = swapchain;
+        _trianglePipeline = trianglePipeline;
 
         var createImageView =
             (delegate* unmanaged<VkDevice, VkImageViewCreateInfo*, void*, VkImageView*, VkResult>)device.GetProcAddress(
@@ -266,6 +269,9 @@ public sealed unsafe class VulkanClearRenderer : IDisposable
 
         TransitionToColorAttachment(imageIndex);
         BeginClearRendering(imageIndex, red, green, blue);
+        _trianglePipeline?.Draw(
+            _commandBuffer,
+            _swapchain.Extent);
         _cmdEndRendering(_commandBuffer);
         TransitionToPresent(imageIndex);
 

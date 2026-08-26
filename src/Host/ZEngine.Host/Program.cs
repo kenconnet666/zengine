@@ -3,6 +3,7 @@ using ZEngine.Graphics.Vulkan;
 using ZEngine.Platform;
 using ZEngine.Platform.Win32;
 using ZEngine.Vulkan.Raw;
+using System.Globalization;
 
 PlatformEnvironment platform = PlatformEnvironment.Current;
 
@@ -15,6 +16,22 @@ try
     bool windowSmoke = args.Contains(
         "--window-smoke",
         StringComparer.Ordinal);
+    double windowSeconds = 2;
+    string? durationArgument = args.FirstOrDefault(
+        argument => argument.StartsWith(
+            "--window-seconds=",
+            StringComparison.Ordinal));
+    if (durationArgument is not null
+        && (!double.TryParse(
+                durationArgument["--window-seconds=".Length..],
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out windowSeconds)
+            || windowSeconds <= 0))
+    {
+        throw new ArgumentException(
+            $"Invalid window smoke duration: '{durationArgument}'.");
+    }
 
     using VulkanLoader loader = VulkanLoader.OpenSystem();
     VulkanApiVersion version = loader.EnumerateInstanceVersion();
@@ -78,8 +95,26 @@ try
             + $"{swapchain.SurfaceFormat.Format}, {swapchain.PresentMode}, "
             + $"{swapchain.Images.Count} images.");
 
-        using VulkanClearRenderer renderer = new(device, swapchain);
-        DateTime deadline = DateTime.UtcNow.AddSeconds(2);
+        byte[] vertexShader = File.ReadAllBytes(
+            Path.Combine(
+                AppContext.BaseDirectory,
+                "Shaders",
+                "triangle.vert.spv"));
+        byte[] fragmentShader = File.ReadAllBytes(
+            Path.Combine(
+                AppContext.BaseDirectory,
+                "Shaders",
+                "triangle.frag.spv"));
+        using VulkanTrianglePipeline trianglePipeline = new(
+            device,
+            swapchain.SurfaceFormat.Format,
+            vertexShader,
+            fragmentShader);
+        using VulkanClearRenderer renderer = new(
+            device,
+            swapchain,
+            trianglePipeline);
+        DateTime deadline = DateTime.UtcNow.AddSeconds(windowSeconds);
         float phase = 0;
         while (DateTime.UtcNow < deadline && window.PumpEvents())
         {
