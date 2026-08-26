@@ -8,7 +8,7 @@
 > 原生后端：Vulkan 1.4；当前唯一图形验收环境为 Windows 11 x64、AMD Radeon RX 9070 GRE  
 > 未来适配目录：Browser、Windows Arm64、Linux x64/Arm64、Android Arm64、macOS x64/Arm64、iOS Arm64  
 > 工作名称：ZEngine  
-> 目标仓库：C:\Users\lionheart\RiderProjects\zadmin  
+> 目标仓库：C:\Users\lionheart\RiderProjects\zengine
 > 兼容原则：基础包保证 Portable UI；Web/Windows/Linux/Android/Apple 增强包按项目依赖提供专属能力
 
 ## 0. 文档目的与方向重置

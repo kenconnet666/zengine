@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>ZEngine.Host</RootNamespace>
+    <AssemblyName>ZEngine.Host</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Foundation\ZEngine.Core\ZEngine.Core.csproj" />
+    <ProjectReference Include="..\..\Native\ZEngine.Platform.Abstractions\ZEngine.Platform.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Native\ZEngine.Vulkan.Raw\ZEngine.Vulkan.Raw.csproj" />
+  </ItemGroup>
+</Project>

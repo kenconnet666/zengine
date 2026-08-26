@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup>
+    <ZEngineArtifactsDir>$(MSBuildThisFileDirectory)artifacts\</ZEngineArtifactsDir>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>ZEngine.Vulkan.RegistryTool</RootNamespace>
+    <AssemblyName>ZEngine.Vulkan.RegistryTool</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ZEngine.Vulkan.Registry\ZEngine.Vulkan.Registry.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZEngine.Vulkan.Registry</RootNamespace>
+    <AssemblyName>ZEngine.Vulkan.Registry</AssemblyName>
+  </PropertyGroup>
+</Project>

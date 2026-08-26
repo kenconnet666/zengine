@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZEngine.Core</RootNamespace>
+    <AssemblyName>ZEngine.Core</AssemblyName>
+  </PropertyGroup>
+</Project>

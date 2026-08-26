@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZEngine.Platform</RootNamespace>
+    <AssemblyName>ZEngine.Platform.Abstractions</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Foundation\ZEngine.Core\ZEngine.Core.csproj" />
+  </ItemGroup>
+</Project>

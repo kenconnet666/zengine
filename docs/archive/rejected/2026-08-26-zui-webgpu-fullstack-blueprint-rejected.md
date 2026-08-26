@@ -10,7 +10,7 @@
 > 目标基线：.NET 11 Preview 7、C# Preview、WebGPU  
 > 首要平台：现代浏览器  
 > 同步验证平台：Windows 11 x64  
-> 目标仓库：C:\Users\lionheart\RiderProjects\zadmin  
+> 历史目标仓库：C:\Users\lionheart\RiderProjects\zadmin
 > 本文性质：架构与产品蓝图，不代表已经批准的最终公共 API
 
 ## 0. 文档目的

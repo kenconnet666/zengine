@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Foundation/ZEngine.Core/ZEngine.Core.csproj" />
+    <Project Path="src/Native/ZEngine.Platform.Abstractions/ZEngine.Platform.Abstractions.csproj" />
+    <Project Path="src/Native/ZEngine.Vulkan.Registry/ZEngine.Vulkan.Registry.csproj" />
+    <Project Path="src/Native/ZEngine.Vulkan.RegistryTool/ZEngine.Vulkan.RegistryTool.csproj" />
+    <Project Path="src/Native/ZEngine.Vulkan.Raw/ZEngine.Vulkan.Raw.csproj" />
+    <Project Path="src/Host/ZEngine.Host/ZEngine.Host.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/HelloZEngine/HelloZEngine.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ZEngine.Vulkan.Registry.Tests/ZEngine.Vulkan.Registry.Tests.csproj" />
+    <Project Path="tests/ZEngine.Vulkan.Raw.Tests/ZEngine.Vulkan.Raw.Tests.csproj" />
+  </Folder>
+</Solution>
