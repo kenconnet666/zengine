@@ -2,7 +2,8 @@
 param(
     [switch]$SkipBuild,
     [switch]$SkipWindowSmoke,
-    [switch]$SkipNativeUi
+    [switch]$SkipNativeUi,
+    [switch]$SkipGameSlice
 )
 
 $ErrorActionPreference = 'Stop'
@@ -82,6 +83,20 @@ try {
             --seconds=2
         if ($LASTEXITCODE -ne 0) {
             throw "Native Vulkan UiLab failed with exit code $LASTEXITCODE."
+        }
+    }
+
+    if (-not $SkipGameSlice) {
+        $gameCache = Join-Path $repositoryRoot 'artifacts/validation/vulkan-game-cache'
+        dotnet run `
+            --project (Join-Path $repositoryRoot 'samples/ZGame.Slice/ZGame.Slice.csproj') `
+            -c Debug `
+            --no-build `
+            -- `
+            --seconds=2 `
+            --cache=$gameCache
+        if ($LASTEXITCODE -ne 0) {
+            throw "Native Vulkan game slice failed with exit code $LASTEXITCODE."
         }
     }
 }

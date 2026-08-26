@@ -62,6 +62,24 @@ public sealed class JobSchedulerTests
     }
 
     [Fact]
+    public void NeverLosesFailureWhenDependencyFinishesDuringRegistration()
+    {
+        using JobScheduler scheduler = new(workerCount: 2);
+        using JobGroup group = scheduler.CreateGroup(GenerationId.Initial);
+        Counter counter = new();
+        for (int iteration = 0; iteration < 2_000; iteration++)
+        {
+            JobHandle failed = group.Schedule(new ThrowJob());
+            JobHandle dependent = group.Schedule(
+                new IncrementJob(counter),
+                [failed]);
+            Assert.Throws<InvalidOperationException>(dependent.Complete);
+        }
+
+        Assert.Equal(0, counter.Value);
+    }
+
+    [Fact]
     public async Task QuiesceCancelsWorkRejectsNewJobsAndReachesIdle()
     {
         using JobScheduler scheduler = new(workerCount: 2);

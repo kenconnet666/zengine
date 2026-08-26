@@ -181,6 +181,7 @@ internal sealed class JobNode
     private int _queued;
     private bool _dependenciesRegistered;
     private bool _completed;
+    private Exception? _completionError;
     private Exception? _dependencyFailure;
 
     public JobNode(
@@ -252,9 +253,7 @@ internal sealed class JobNode
         {
             if (_completed)
             {
-                failure = _completion.Task.IsCanceled
-                    ? new TaskCanceledException(_completion.Task)
-                    : _completion.Task.Exception?.InnerException;
+                failure = _completionError;
                 return false;
             }
 
@@ -303,6 +302,7 @@ internal sealed class JobNode
                 return;
             }
 
+            _completionError = error;
             _completed = true;
             dependents = _dependents.ToArray();
             _dependents.Clear();
