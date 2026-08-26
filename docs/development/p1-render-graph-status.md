@@ -36,11 +36,13 @@ Status: P1A backend-neutral graph compiler accepted; Vulkan execution and advanc
 - Runtime descriptor binding policy: Descriptor Heap first, Descriptor Buffer second, descriptor sets as portable fallback.
 - RX 9070 GRE device creation with Dynamic Rendering Local Read and Descriptor Heap enabled.
 - Hardware suites serialize same-process swapchain tests; this avoids unsafe driver stress from unrelated xUnit class concurrency while solution projects may still run concurrently.
+- Pure C# Vulkan allocator behind `IGpuAllocator` with memory-type selection, aligned block suballocation, dedicated large allocations and free-range merging.
+- Persistently mapped host-coherent upload/readback blocks and typed `VulkanBuffer` ownership.
 
 ## Validation evidence
 
 - `dotnet build ZEngine.slnx -c Debug`: zero warnings and zero errors.
-- Microsoft Testing Platform: 17 passed, zero failed.
+- Microsoft Testing Platform: 19 passed, zero failed.
 - RenderGraph suite: seven passed, including cycle, culling, barrier, alias and ownership diagnostics.
 - Stable compiled execution: 10,000 executions measured zero managed bytes on the calling thread.
 - Vulkan timeline semaphore: host signal, wait and counter-value test passed under Khronos validation.
@@ -51,11 +53,12 @@ Status: P1A backend-neutral graph compiler accepted; Vulkan execution and advanc
 - Window-generation validation: resize, minimize, restore and two swapchain rebuilds completed with zero validation errors.
 - Capability validation: RX 9070 GRE reported Descriptor Heap, Descriptor Buffer, Buffer Device Address and Dynamic Rendering Local Read; policy selected Descriptor Heap.
 - Stability rerun: the complete 18-test validation suite passed three consecutive repetitions after GPU-test serialization.
+- Allocator hardware test: two upload buffers shared one 16 MiB `VkDeviceMemory` block, mapped writes round-tripped, freed ranges merged and a device-local block stayed unmapped.
 - `dotnet format ZEngine.slnx --verify-no-changes`: passed.
 
 ## Remaining P1
 
-- Vulkan allocator baseline behind `IGpuAllocator`.
+- Memory-budget telemetry, staging ring and non-coherent host-memory fallback.
 - Descriptor Heap arena/command path and Descriptor Buffer/set fallback implementation.
 - Pipeline cache and failure-safe shader/pipeline hot reload.
 - Debug labels and RenderDoc capture naming.

@@ -12,6 +12,8 @@ public sealed unsafe class VulkanInstance : IDisposable
         _enumeratePhysicalDevices;
     private readonly delegate* unmanaged<VkPhysicalDevice, VkPhysicalDevicePropertiesBuffer*, void>
         _getPhysicalDeviceProperties;
+    private readonly delegate* unmanaged<VkPhysicalDevice, VkPhysicalDeviceMemoryProperties*, void>
+        _getPhysicalDeviceMemoryProperties;
     private readonly delegate* unmanaged<VkPhysicalDevice, uint*, VkQueueFamilyProperties*, void>
         _getQueueFamilyProperties;
     private readonly delegate* unmanaged<VkPhysicalDevice, byte*, uint*, VkExtensionProperties*, VkResult>
@@ -38,6 +40,9 @@ public sealed unsafe class VulkanInstance : IDisposable
         _getPhysicalDeviceProperties =
             (delegate* unmanaged<VkPhysicalDevice, VkPhysicalDevicePropertiesBuffer*, void>)RequireProc(
                 "vkGetPhysicalDeviceProperties\0"u8);
+        _getPhysicalDeviceMemoryProperties =
+            (delegate* unmanaged<VkPhysicalDevice, VkPhysicalDeviceMemoryProperties*, void>)RequireProc(
+                "vkGetPhysicalDeviceMemoryProperties\0"u8);
         _getQueueFamilyProperties =
             (delegate* unmanaged<VkPhysicalDevice, uint*, VkQueueFamilyProperties*, void>)RequireProc(
                 "vkGetPhysicalDeviceQueueFamilyProperties\0"u8);
@@ -249,6 +254,8 @@ public sealed unsafe class VulkanInstance : IDisposable
         uint queueFamilyIndex = FindGraphicsQueueFamily(device);
         HashSet<string> extensions = EnumerateExtensions(device);
         string name = ReadUtf8(properties.DeviceName, 256);
+        VkPhysicalDeviceMemoryProperties memoryProperties = default;
+        _getPhysicalDeviceMemoryProperties(device, &memoryProperties);
 
         return new(
             device,
@@ -259,7 +266,8 @@ public sealed unsafe class VulkanInstance : IDisposable
             properties.DeviceId,
             properties.DeviceType,
             queueFamilyIndex,
-            extensions);
+            extensions,
+            memoryProperties);
     }
 
     private uint FindGraphicsQueueFamily(VkPhysicalDevice device)

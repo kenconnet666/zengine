@@ -25,6 +25,8 @@ public enum VkStructureType : int
     InstanceCreateInfo = 1,
     DeviceQueueCreateInfo = 2,
     DeviceCreateInfo = 3,
+    MemoryAllocateInfo = 5,
+    BufferCreateInfo = 12,
     PhysicalDeviceVulkan13Features = 53,
     FenceCreateInfo = 8,
     SemaphoreCreateInfo = 9,

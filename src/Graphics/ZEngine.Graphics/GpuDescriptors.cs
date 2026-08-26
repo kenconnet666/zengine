@@ -127,13 +127,15 @@ public readonly record struct GpuAllocationRequest(
     ulong Size,
     ulong Alignment,
     GpuMemoryClass MemoryClass,
-    bool Transient);
+    bool Transient,
+    uint CompatibleMemoryTypes = uint.MaxValue);
 
 public readonly record struct GpuAllocation(
     ulong Offset,
     ulong Size,
     uint MemoryType,
-    nint BackendHandle);
+    nint BackendHandle,
+    nint MappedAddress = 0);
 
 public interface IGpuAllocator
 {

@@ -11,4 +11,5 @@ public sealed record VulkanPhysicalDeviceInfo(
     uint DeviceId,
     VkPhysicalDeviceType DeviceType,
     uint GraphicsQueueFamilyIndex,
-    IReadOnlySet<string> Extensions);
+    IReadOnlySet<string> Extensions,
+    VkPhysicalDeviceMemoryProperties MemoryProperties);

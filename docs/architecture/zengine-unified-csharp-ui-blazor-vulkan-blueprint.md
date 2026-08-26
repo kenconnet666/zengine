@@ -662,7 +662,7 @@ Vulkan 原生分配不允许每个 buffer 调一次 vkAllocateMemory。首阶段
 1. 自有最小 buddy 或 TLSF block suballocator。
 2. VMA 通过内部 C ABI 包装。
 
-推荐 P1 先接 VMA 作为正确性和性能基线，同时保持 IGpuAllocator 内部边界；P2 根据基准决定是否保留或替换。使用 VMA 不会污染公共 API，也不妨碍我们拥有 Vulkan binding 和渲染架构。
+研究基线锁定 VMA 3.4.0，但 2026-08-27 的第一条可运行实现选择纯 C# block suballocator：memory-type mask/flags 选择、对齐子分配、host-visible persistent mapping、空闲区合并和 dedicated 大分配都位于 `IGpuAllocator` 后面。这样不为主体引入 C++ shim；P2 仍用 VMA 数据和算法作基准，只有实测明显获益且 native lifecycle 可接受时才增加可选实现。
 
 必须支持：
 
@@ -3545,7 +3545,7 @@ Release 插件包：
 8. Raw Binding 跟踪最新已批准 Registry；当前 Windows 主路径直接使用 Vulkan 1.4。（接受）
 9. 不建立 Direct3D/Metal 风格通用 RHI。（接受）
 10. Windows P0 直接 Win32；Windows Arm64、Linux、Android、macOS、iOS 只规划 adapter/RID 边界。（接受）
-11. P1 以 VMA 作为 allocator baseline，保留替换边界。（接受）
+11. P1 保留 IGpuAllocator 与 VMA 3.4.0 benchmark baseline，但首个运行实现使用纯 C# Vulkan block suballocator，不引入 C++ shim。（实机实现后修订接受）
 12. 使用 Dynamic Rendering、Synchronization 2 和 Timeline。（接受）
 13. Render Graph 管理 barrier、资源 lifetime 和 plugin pass。（接受）
 14. 初始渲染路径采用 Forward+，高级路径插件化。（接受）
