@@ -24,6 +24,8 @@
     <Project Path="src/UI/Zui.Sdk/Zui.Sdk.csproj" />
     <Project Path="src/Agent/ZEngine.Agent/ZEngine.Agent.csproj" />
     <Project Path="src/Agent/ZEngine.AgentHost/ZEngine.AgentHost.csproj" />
+    <Project Path="src/Assets/ZEngine.Assets/ZEngine.Assets.csproj" />
+    <Project Path="src/Assets/ZEngine.AssetImporters/ZEngine.AssetImporters.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/HelloZEngine/HelloZEngine.csproj" />
@@ -42,6 +44,7 @@
     <Project Path="tests/ZEngine.Plugins.Tests/ZEngine.Plugins.Tests.csproj" />
     <Project Path="tests/ZEngine.UI.Tests/ZEngine.UI.Tests.csproj" />
     <Project Path="tests/ZEngine.Agent.Tests/ZEngine.Agent.Tests.csproj" />
+    <Project Path="tests/ZEngine.Assets.Tests/ZEngine.Assets.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/fixtures/">
     <Project Path="tests/Fixtures/ZEngine.CounterPlugin.Contracts/ZEngine.CounterPlugin.Contracts.csproj" />

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZEngine.AssetImporters</RootNamespace>
+    <AssemblyName>ZEngine.AssetImporters</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ZEngine.Assets\ZEngine.Assets.csproj" />
+    <ProjectReference Include="..\..\Plugins\ZEngine.Plugins.Abstractions\ZEngine.Plugins.Abstractions.csproj" />
+  </ItemGroup>
+</Project>
