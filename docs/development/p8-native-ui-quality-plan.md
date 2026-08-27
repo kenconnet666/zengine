@@ -1,6 +1,6 @@
 # P8 Native UI Quality Lab Plan
 
-Status: planned after the P0-P7 acceptance and the multi-GPU new-machine validation commit `a199dfe`.
+Status: P8A accepted on 2026-08-27; P8B text shaping and font metrics is next.
 
 ## 1. Problem statement
 

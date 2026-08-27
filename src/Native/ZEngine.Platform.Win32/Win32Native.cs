@@ -18,8 +18,10 @@ internal static unsafe partial class Win32Native
     internal const uint WmClose = 0x0010;
     internal const uint WmDestroy = 0x0002;
     internal const uint WmQuit = 0x0012;
+    internal const uint WmDpiChanged = 0x02E0;
     internal const uint ColorWindow = 5;
     internal const int IdcArrow = 32512;
+    internal static nint DpiAwarenessContextPerMonitorAwareV2 => new(-4);
 
     [LibraryImport("kernel32.dll", EntryPoint = "GetModuleHandleW",
         StringMarshalling = StringMarshalling.Utf16)]
@@ -66,14 +68,26 @@ internal static unsafe partial class Win32Native
         nint window,
         out Rect rectangle);
 
-    [LibraryImport("user32.dll", EntryPoint = "AdjustWindowRectEx",
+    [LibraryImport("user32.dll", EntryPoint = "AdjustWindowRectExForDpi",
         SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    internal static partial bool AdjustWindowRectEx(
+    internal static partial bool AdjustWindowRectExForDpi(
         ref Rect rectangle,
         uint style,
         [MarshalAs(UnmanagedType.Bool)] bool hasMenu,
-        uint extendedStyle);
+        uint extendedStyle,
+        uint dpi);
+
+    [LibraryImport("user32.dll", EntryPoint = "SetProcessDpiAwarenessContext",
+        SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static partial bool SetProcessDpiAwarenessContext(nint value);
+
+    [LibraryImport("user32.dll", EntryPoint = "GetDpiForWindow")]
+    internal static partial uint GetDpiForWindow(nint window);
+
+    [LibraryImport("user32.dll", EntryPoint = "GetDpiForSystem")]
+    internal static partial uint GetDpiForSystem();
 
     [LibraryImport("user32.dll", EntryPoint = "SetWindowPos",
         SetLastError = true)]
@@ -131,6 +145,21 @@ internal static unsafe partial class Win32Native
     {
         switch (message)
         {
+            case WmDpiChanged:
+                if (lParam != 0)
+                {
+                    Rect suggested = *(Rect*)lParam;
+                    _ = SetWindowPos(
+                        window,
+                        0,
+                        suggested.Left,
+                        suggested.Top,
+                        suggested.Right - suggested.Left,
+                        suggested.Bottom - suggested.Top,
+                        SwpNoZOrder | SwpNoActivate);
+                }
+
+                return 0;
             case WmClose:
                 DestroyWindow(window);
                 return 0;

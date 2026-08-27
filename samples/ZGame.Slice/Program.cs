@@ -87,7 +87,8 @@ using VulkanDevice device = instance.CreateGraphicsDevice(
     enableSwapchain: true);
 VulkanUiScene uiScene = new();
 using GdiGlyphRasterizer glyphRasterizer = new();
-UpdateUi();
+UiScaleContext uiScale = default;
+UpdateUi(force: true);
 VulkanUiOverlayFactory overlayFactory = new(
     uiScene,
     ReadShader("ui.vert.spv"),
@@ -113,7 +114,11 @@ while (DateTime.UtcNow < deadline && window.PumpEvents())
     if (frameCount % 15 == 0)
     {
         hud.Update(frame);
-        UpdateUi();
+        UpdateUi(force: true);
+    }
+    else
+    {
+        UpdateUi(force: false);
     }
 
     WindowSize current = window.ClientSize;
@@ -142,8 +147,9 @@ VulkanValidationMessage[] validationErrors = instance.ValidationMessages
     .Where(message =>
         (message.Severity & VkDebugUtilsMessageSeverityFlagsExt.Error) != 0)
     .ToArray();
+UiRenderTelemetry uiTelemetry = uiScene.Telemetry;
 Console.WriteLine(
-    $"Native slice: frames={frameCount}, fps={frameCount / frameTimer.Elapsed.TotalSeconds:0.0}, gameplayMs={tickMilliseconds / Math.Max(1, frameCount):0.000}, assets={runtime.AssetResidency.Count}, validationErrors={validationErrors.Length}.");
+    $"Native slice: frames={frameCount}, fps={frameCount / frameTimer.Elapsed.TotalSeconds:0.0}, gameplayMs={tickMilliseconds / Math.Max(1, frameCount):0.000}, assets={runtime.AssetResidency.Count}, uiScale={uiScale.ScaleX:0.##}, uiInstances={uiTelemetry.InstanceCount}, uiDraws={uiTelemetry.DrawCount}, glyphHits={uiTelemetry.GlyphCacheHits}, glyphMisses={uiTelemetry.GlyphCacheMisses}, validationErrors={validationErrors.Length}.");
 if (validationErrors.Length > 0)
 {
     Console.Error.WriteLine(string.Join(
@@ -154,10 +160,21 @@ if (validationErrors.Length > 0)
 
 return 0;
 
-void UpdateUi()
+void UpdateUi(bool force)
 {
-    WindowSize current = window.ClientSize;
-    if (current.Width == 0 || current.Height == 0)
+    WindowSize physical = window.ClientSize;
+    if (physical.Width == 0 || physical.Height == 0)
+    {
+        return;
+    }
+
+    WindowDpi dpi = window.Dpi;
+    UiScaleContext next = UiScaleContext.FromDpi(
+        physical.Width,
+        physical.Height,
+        dpi.X,
+        dpi.Y);
+    if (!force && next == uiScale)
     {
         return;
     }
@@ -165,9 +182,12 @@ void UpdateUi()
     UiTree tree = hud.Render(theme);
     UiLayout layout = new UiLayoutEngine().Layout(
         tree,
-        current.Width,
-        current.Height);
-    uiScene.Update(new UiPaintCompiler().Compile(tree, layout), glyphRasterizer);
+        next.LogicalWidth,
+        next.LogicalHeight);
+    uiScene.Update(
+        new UiPaintCompiler().Compile(tree, layout, next),
+        glyphRasterizer);
+    uiScale = next;
 }
 
 string? FindArgument(string prefix) => args

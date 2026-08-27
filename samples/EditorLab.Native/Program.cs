@@ -98,13 +98,12 @@ console.Write(
     "Vulkan",
     $"{physicalDevice.Name} · Vulkan {physicalDevice.ApiVersion} · "
     + device.Capabilities.DescriptorBindingModel);
-WindowSize size = window.ClientSize;
-UiTree tree = component.Render(theme);
-UiLayout layout = new UiLayoutEngine().Layout(tree, size.Width, size.Height);
-IReadOnlyList<UiPaintCommand> paint = new UiPaintCompiler().Compile(tree, layout);
 VulkanUiScene scene = new();
 using GdiGlyphRasterizer glyphRasterizer = new();
-scene.Update(paint, glyphRasterizer);
+UiScaleContext currentScale = default;
+UiLayout? currentLayout = null;
+int paintCount = 0;
+UpdateUi(force: true);
 VulkanUiOverlayFactory overlayFactory = new(
     scene,
     ReadShader("ui.vert.spv"),
@@ -117,12 +116,14 @@ using VulkanWindowRenderer renderer = new(
     ReadShader("triangle.frag.spv"),
     overlayFactory: overlayFactory,
     captureFactory: new VulkanFrameCaptureFactory());
+UiRenderTelemetry initialTelemetry = scene.Telemetry;
 Console.WriteLine(
-    $"Editor Lab: panels={panels.Snapshot().Count}, nodes={layout.Bounds.Count}, paint={paint.Count}, quads={scene.Quads.Count}.");
+    $"Editor Lab: logical={currentScale.LogicalWidth:0.#}x{currentScale.LogicalHeight:0.#}, physical={currentScale.PhysicalWidth}x{currentScale.PhysicalHeight}, dpi={currentScale.DpiX}, scale={currentScale.ScaleX:0.##}, panels={panels.Snapshot().Count}, nodes={currentLayout!.Bounds.Count}, paint={paintCount}, instances={initialTelemetry.InstanceCount}, draws={initialTelemetry.DrawCount}, glyphHits={initialTelemetry.GlyphCacheHits}, glyphMisses={initialTelemetry.GlyphCacheMisses}, compileMs={initialTelemetry.SceneCompileMilliseconds:0.###}.");
 
 DateTime deadline = DateTime.UtcNow.AddSeconds(seconds);
 while (DateTime.UtcNow < deadline && window.PumpEvents())
 {
+    UpdateUi(force: false);
     WindowSize current = window.ClientSize;
     renderer.RenderFrame(
         current.Width,
@@ -159,6 +160,38 @@ if (errors.Length > 0)
 
 Console.WriteLine("Editor Lab Vulkan validation reported no errors.");
 return 0;
+
+void UpdateUi(bool force)
+{
+    WindowSize physical = window.ClientSize;
+    if (physical.Width == 0 || physical.Height == 0)
+    {
+        return;
+    }
+
+    WindowDpi dpi = window.Dpi;
+    UiScaleContext next = UiScaleContext.FromDpi(
+        physical.Width,
+        physical.Height,
+        dpi.X,
+        dpi.Y);
+    if (!force && next == currentScale)
+    {
+        return;
+    }
+
+    UiTree tree = component.Render(theme);
+    UiLayout layout = new UiLayoutEngine().Layout(
+        tree,
+        next.LogicalWidth,
+        next.LogicalHeight);
+    IReadOnlyList<UiPaintCommand> paint =
+        new UiPaintCompiler().Compile(tree, layout, next);
+    scene.Update(paint, glyphRasterizer);
+    currentScale = next;
+    currentLayout = layout;
+    paintCount = paint.Count;
+}
 
 static PluginManifest Manifest(
     string id,

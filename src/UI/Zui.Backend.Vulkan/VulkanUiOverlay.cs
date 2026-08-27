@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using ZEngine.Graphics.Vulkan;
+using ZEngine.UI.Rendering;
 using ZEngine.Vulkan.Raw;
 using ZEngine.Vulkan.Raw.Generated;
 
@@ -239,7 +240,7 @@ internal sealed unsafe class VulkanUiOverlay : IVulkanOverlay
             VkPipelineColorBlendAttachmentState blendAttachment = new()
             {
                 BlendEnable = 1,
-                SrcColorBlendFactor = VkBlendFactor.SourceAlpha,
+                SrcColorBlendFactor = VkBlendFactor.One,
                 DstColorBlendFactor = VkBlendFactor.OneMinusSourceAlpha,
                 ColorBlendOp = VkBlendOp.Add,
                 SrcAlphaBlendFactor = VkBlendFactor.One,
@@ -343,6 +344,7 @@ internal sealed unsafe class VulkanUiOverlay : IVulkanOverlay
 
         public UiPushConstants(UiQuad quad, VkExtent2D extent)
         {
+            UiLinearColor color = UiColorSpace.ToPremultipliedLinear(quad.Color);
             X = quad.X;
             Y = quad.Y;
             Width = quad.Width;
@@ -351,10 +353,10 @@ internal sealed unsafe class VulkanUiOverlay : IVulkanOverlay
             ViewportHeight = extent.Height;
             Padding0 = 0;
             Padding1 = 0;
-            Red = quad.Color.Red / 255f;
-            Green = quad.Color.Green / 255f;
-            Blue = quad.Color.Blue / 255f;
-            Alpha = quad.Color.Alpha / 255f;
+            Red = color.Red;
+            Green = color.Green;
+            Blue = color.Blue;
+            Alpha = color.Alpha;
         }
     }
 }

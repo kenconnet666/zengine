@@ -211,10 +211,28 @@ public sealed class UiPaintCompiler
 {
     public IReadOnlyList<UiPaintCommand> Compile(UiTree tree, UiLayout layout)
     {
+        ArgumentNullException.ThrowIfNull(tree);
+        ArgumentNullException.ThrowIfNull(layout);
         List<UiPaintCommand> commands = [];
         foreach (UiNode child in tree.Root.Children)
         {
-            CompileNode(child, layout, commands);
+            CompileNode(child, layout, null, commands);
+        }
+
+        return commands;
+    }
+
+    public IReadOnlyList<UiPaintCommand> Compile(
+        UiTree tree,
+        UiLayout layout,
+        UiScaleContext scale)
+    {
+        ArgumentNullException.ThrowIfNull(tree);
+        ArgumentNullException.ThrowIfNull(layout);
+        List<UiPaintCommand> commands = [];
+        foreach (UiNode child in tree.Root.Children)
+        {
+            CompileNode(child, layout, scale, commands);
         }
 
         return commands;
@@ -223,35 +241,56 @@ public sealed class UiPaintCompiler
     private static void CompileNode(
         UiNode node,
         UiLayout layout,
+        UiScaleContext? scale,
         List<UiPaintCommand> commands)
     {
         UiRect bounds = layout.Get(node.Id);
         if (node.Style.BackgroundColor is { } background)
         {
+            UiRect paintBounds = scale is { } boxScale
+                ? boxScale.ToPhysicalBox(bounds)
+                : bounds;
+            UiShadow? shadow = node.Style.Shadow;
+            if (shadow is { } logicalShadow && scale is { } shadowScale)
+            {
+                shadow = new(
+                    shadowScale.ScaleHorizontal(logicalShadow.OffsetX),
+                    shadowScale.ScaleVertical(logicalShadow.OffsetY),
+                    shadowScale.ScaleUniform(logicalShadow.Blur),
+                    shadowScale.ScaleUniform(logicalShadow.Spread),
+                    logicalShadow.Color);
+            }
+
             commands.Add(new PaintBox(
                 node.Id,
-                bounds,
+                paintBounds,
                 background,
                 node.Style.BorderColor,
-                node.Style.BorderWidth.Value,
-                node.Style.BorderRadius.Value,
-                node.Style.Shadow));
+                scale?.SnapStroke(node.Style.BorderWidth.Value)
+                    ?? node.Style.BorderWidth.Value,
+                scale?.ScaleUniform(node.Style.BorderRadius.Value)
+                    ?? node.Style.BorderRadius.Value,
+                shadow));
         }
 
         if (node.Text is { Length: > 0 } text)
         {
+            UiRect textBounds = scale is { } textScale
+                ? textScale.ToPhysicalText(bounds, node.Style.FontSize)
+                : bounds;
             commands.Add(new PaintText(
                 node.Id,
-                bounds,
+                textBounds,
                 text,
                 node.Style.Color ?? UiColor.FromRgb(0xFFFFFF),
-                node.Style.FontSize,
+                scale?.ScaleVertical(node.Style.FontSize)
+                    ?? node.Style.FontSize,
                 node.Style.FontWeight));
         }
 
         foreach (UiNode child in node.Children)
         {
-            CompileNode(child, layout, commands);
+            CompileNode(child, layout, scale, commands);
         }
     }
 }

@@ -2,6 +2,7 @@ using ZEngine.Graphics.Vulkan;
 using ZEngine.UI.Rendering;
 using ZEngine.Vulkan.Raw;
 using ZEngine.Vulkan.Raw.Generated;
+using System.Diagnostics;
 using System.Text;
 
 namespace ZEngine.UI.Vulkan;
@@ -13,22 +14,41 @@ public readonly record struct UiQuad(
     float Height,
     UiColor Color);
 
+public readonly record struct UiRenderTelemetry(
+    int PaintCommandCount,
+    int BoxInstances,
+    int GlyphInstances,
+    int InstanceCount,
+    int DrawCount,
+    long GlyphRequests,
+    long GlyphCacheHits,
+    long GlyphCacheMisses,
+    long AtlasUploadBytes,
+    double SceneCompileMilliseconds);
+
 public sealed class VulkanUiScene
 {
     private UiQuad[] _quads = [];
+    private UiRenderTelemetry _telemetry;
 
     public IReadOnlyList<UiQuad> Quads => Volatile.Read(ref _quads);
+
+    public UiRenderTelemetry Telemetry => _telemetry;
 
     public void Update(
         IReadOnlyList<UiPaintCommand> commands,
         IGlyphRasterizer? glyphRasterizer = null)
     {
         ArgumentNullException.ThrowIfNull(commands);
+        long started = Stopwatch.GetTimestamp();
         List<UiQuad> quads = [];
+        int boxInstances = 0;
+        int glyphInstances = 0;
         foreach (UiPaintCommand command in commands)
         {
             if (command is PaintBox box)
             {
+                int before = quads.Count;
                 if (box.Shadow is { } shadow)
                 {
                     quads.Add(new(
@@ -63,14 +83,32 @@ public sealed class VulkanUiScene
                         box.Bounds.Height,
                         box.Color));
                 }
+
+                boxInstances += quads.Count - before;
             }
             else if (command is PaintText text && glyphRasterizer is not null)
             {
+                int before = quads.Count;
                 AddTextQuads(quads, text, glyphRasterizer);
+                glyphInstances += quads.Count - before;
             }
         }
 
-        Volatile.Write(ref _quads, quads.ToArray());
+        UiQuad[] compiled = quads.ToArray();
+        GlyphRasterizerTelemetry glyphTelemetry =
+            glyphRasterizer?.Telemetry ?? default;
+        _telemetry = new(
+            commands.Count,
+            boxInstances,
+            glyphInstances,
+            compiled.Length,
+            compiled.Length,
+            glyphTelemetry.Requests,
+            glyphTelemetry.CacheHits,
+            glyphTelemetry.CacheMisses,
+            0,
+            Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+        Volatile.Write(ref _quads, compiled);
     }
 
     private static void AddTextQuads(

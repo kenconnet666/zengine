@@ -10,6 +10,7 @@ using Xunit;
 using ZEngine.UI.Blazor;
 using ZEngine.UI.Rendering;
 using ZEngine.UI.Windows;
+using ZEngine.Platform.Win32;
 
 namespace ZEngine.UI.Tests;
 
@@ -115,9 +116,126 @@ public sealed class UiRuntimeTests
                 Rune.GetRuneAt("中", 0),
                 28,
                 400);
+            RasterizedGlyph cached = rasterizer.Rasterize(
+                Rune.GetRuneAt("中", 0),
+                28,
+                400);
             Assert.True(glyph.Width > 0);
             Assert.Contains(glyph.Alpha, alpha => alpha > 0);
+            Assert.Same(glyph, cached);
+            Assert.Equal(
+                new GlyphRasterizerTelemetry(2, 1, 1),
+                rasterizer.Telemetry);
         }
+    }
+
+    [Theory]
+    [InlineData(96, 1f, 960f, 640f)]
+    [InlineData(120, 1.25f, 768f, 512f)]
+    [InlineData(144, 1.5f, 640f, 426.66666f)]
+    [InlineData(192, 2f, 480f, 320f)]
+    public void ScaleContextSeparatesLogicalAndPhysicalPixels(
+        int dpi,
+        float expectedScale,
+        float expectedLogicalWidth,
+        float expectedLogicalHeight)
+    {
+        UiScaleContext scale = UiScaleContext.FromDpi(
+            960,
+            640,
+            checked((uint)dpi),
+            checked((uint)dpi));
+
+        Assert.Equal(expectedScale, scale.ScaleX);
+        Assert.Equal(expectedScale, scale.ScaleY);
+        Assert.Equal(expectedLogicalWidth, scale.LogicalWidth, 3);
+        Assert.Equal(expectedLogicalHeight, scale.LogicalHeight, 3);
+    }
+
+    [Fact]
+    public void ScaledPaintSnapsBoxesBordersAndTextBaselines()
+    {
+        using LoginCard component = new();
+        UiTree tree = component.Render(new());
+        UiScaleContext scale = UiScaleContext.FromScale(1200, 800, 1.25f);
+        UiLayout layout = new UiLayoutEngine().Layout(
+            tree,
+            scale.LogicalWidth,
+            scale.LogicalHeight);
+        IReadOnlyList<UiPaintCommand> paint =
+            new UiPaintCompiler().Compile(tree, layout, scale);
+
+        Assert.NotEmpty(paint);
+        Assert.All(paint.OfType<PaintBox>(), box =>
+        {
+            Assert.Equal(MathF.Round(box.Bounds.X), box.Bounds.X);
+            Assert.Equal(MathF.Round(box.Bounds.Y), box.Bounds.Y);
+            Assert.Equal(MathF.Round(box.Bounds.Width), box.Bounds.Width);
+            Assert.Equal(MathF.Round(box.Bounds.Height), box.Bounds.Height);
+            if (box.BorderWidth > 0)
+            {
+                Assert.True(box.BorderWidth >= 1);
+                Assert.Equal(MathF.Round(box.BorderWidth), box.BorderWidth);
+            }
+        });
+        Assert.All(paint.OfType<PaintText>(), text =>
+            Assert.Equal(
+                MathF.Round(text.Bounds.Y + text.FontSize),
+                text.Bounds.Y + text.FontSize));
+    }
+
+    [Fact]
+    public void ScaleConversionHasNoStableManagedAllocation()
+    {
+        UiScaleContext scale = UiScaleContext.FromScale(1920, 1080, 1.5f);
+        UiRect logical = new(10.25f, 20.5f, 300.75f, 42.25f);
+        _ = scale.ToPhysicalBox(logical);
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        float total = 0;
+        for (int iteration = 0; iteration < 10_000; iteration++)
+        {
+            total += scale.ToPhysicalBox(logical).Width;
+        }
+
+        Assert.True(total > 0);
+        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+    }
+
+    [Fact]
+    public void Win32WindowReportsPhysicalDpi()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        using Win32Window window = Win32Window.Create(
+            "ZEngine DPI Test",
+            320,
+            180);
+
+        Assert.True(window.Dpi.X >= 96);
+        Assert.True(window.Dpi.Y >= 96);
+        Assert.True(window.Dpi.ScaleX >= 1);
+        Assert.True(window.Dpi.ScaleY >= 1);
+    }
+
+    [Fact]
+    public void UiColorsConvertFromSrgbAndPremultiplyAlpha()
+    {
+        Assert.Equal(0, UiColorSpace.SrgbToLinear(0));
+        Assert.Equal(1, UiColorSpace.SrgbToLinear(255));
+        Assert.Equal(0.21586f, UiColorSpace.SrgbToLinear(128), 5);
+
+        UiLinearColor color = UiColorSpace.ToPremultipliedLinear(
+            new(255, 128, 0, 128));
+        Assert.Equal(128 / 255f, color.Alpha, 5);
+        Assert.Equal(color.Alpha, color.Red, 5);
+        Assert.Equal(
+            UiColorSpace.SrgbToLinear(128) * color.Alpha,
+            color.Green,
+            5);
+        Assert.Equal(0, color.Blue);
     }
 
     private static UiNode Find(UiNode node, UiTag tag)

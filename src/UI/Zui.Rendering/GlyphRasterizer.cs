@@ -10,7 +10,14 @@ public sealed record RasterizedGlyph(
     int Advance,
     byte[] Alpha);
 
+public readonly record struct GlyphRasterizerTelemetry(
+    long Requests,
+    long CacheHits,
+    long CacheMisses);
+
 public interface IGlyphRasterizer
 {
+    GlyphRasterizerTelemetry Telemetry { get; }
+
     RasterizedGlyph Rasterize(Rune rune, int pixelSize, int fontWeight);
 }

@@ -12,6 +12,9 @@ public sealed unsafe partial class GdiGlyphRasterizer : IGlyphRasterizer, IDispo
     private readonly Dictionary<(int CodePoint, int Size, int Weight), RasterizedGlyph>
         _cache = [];
     private nint _deviceContext;
+    private long _requests;
+    private long _cacheHits;
+    private long _cacheMisses;
 
     public GdiGlyphRasterizer(string family = "Microsoft YaHei UI")
     {
@@ -40,15 +43,24 @@ public sealed unsafe partial class GdiGlyphRasterizer : IGlyphRasterizer, IDispo
                 "The Win32 P4 glyph baseline currently accepts BMP runes; supplementary planes require DirectWrite glyph indexing.");
         }
 
-        return _cache.TryGetValue(
+        _requests++;
+        if (_cache.TryGetValue(
             (rune.Value, pixelSize, fontWeight),
-            out RasterizedGlyph? cached)
-            ? cached
-            : _cache[(rune.Value, pixelSize, fontWeight)] = RasterizeCore(
-                rune.Value,
-                pixelSize,
-                fontWeight);
+            out RasterizedGlyph? cached))
+        {
+            _cacheHits++;
+            return cached;
+        }
+
+        _cacheMisses++;
+        return _cache[(rune.Value, pixelSize, fontWeight)] = RasterizeCore(
+            rune.Value,
+            pixelSize,
+            fontWeight);
     }
+
+    public GlyphRasterizerTelemetry Telemetry =>
+        new(_requests, _cacheHits, _cacheMisses);
 
     public void Dispose()
     {

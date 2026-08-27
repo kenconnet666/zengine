@@ -8,6 +8,7 @@ public sealed unsafe class Win32Window : INativeWindow
 {
     private const string ClassName = "ZEngine.Window";
     private static readonly object RegistrationLock = new();
+    private static readonly Lazy<bool> DpiAwareness = new(EnableDpiAwareness);
     private static ushort _classAtom;
     private nint _window;
 
@@ -41,6 +42,17 @@ public sealed unsafe class Win32Window : INativeWindow
         }
     }
 
+    public WindowDpi Dpi
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf(_window == 0, this);
+            uint dpi = Win32Native.GetDpiForWindow(_window);
+            dpi = dpi == 0 ? WindowDpi.Default : dpi;
+            return new(dpi, dpi);
+        }
+    }
+
     public bool IsMinimized =>
         _window != 0 && Win32Native.IsIconic(_window);
 
@@ -57,8 +69,28 @@ public sealed unsafe class Win32Window : INativeWindow
         }
 
         ArgumentException.ThrowIfNullOrWhiteSpace(title);
+        _ = DpiAwareness.Value;
         nint instance = Win32Native.GetModuleHandle(null);
         EnsureWindowClass(instance);
+
+        uint dpi = Win32Native.GetDpiForSystem();
+        dpi = dpi == 0 ? WindowDpi.Default : dpi;
+        Rect windowBounds = new()
+        {
+            Right = checked((int)MathF.Round(width * dpi / 96f)),
+            Bottom = checked((int)MathF.Round(height * dpi / 96f))
+        };
+        if (!Win32Native.AdjustWindowRectExForDpi(
+                ref windowBounds,
+                Win32Native.WsOverlappedWindow,
+                false,
+                0,
+                dpi))
+        {
+            throw new Win32Exception(
+                Marshal.GetLastPInvokeError(),
+                "AdjustWindowRectExForDpi failed during window creation.");
+        }
 
         nint window = Win32Native.CreateWindowEx(
             0,
@@ -67,8 +99,8 @@ public sealed unsafe class Win32Window : INativeWindow
             Win32Native.WsOverlappedWindow,
             Win32Native.CwUseDefault,
             Win32Native.CwUseDefault,
-            checked((int)width),
-            checked((int)height),
+            windowBounds.Right - windowBounds.Left,
+            windowBounds.Bottom - windowBounds.Top,
             0,
             0,
             instance,
@@ -128,15 +160,16 @@ public sealed unsafe class Win32Window : INativeWindow
             Right = checked((int)width),
             Bottom = checked((int)height)
         };
-        if (!Win32Native.AdjustWindowRectEx(
+        if (!Win32Native.AdjustWindowRectExForDpi(
                 ref rectangle,
                 Win32Native.WsOverlappedWindow,
                 false,
-                0))
+                0,
+                Dpi.X))
         {
             throw new Win32Exception(
                 Marshal.GetLastPInvokeError(),
-                "AdjustWindowRectEx failed.");
+                "AdjustWindowRectExForDpi failed.");
         }
 
         if (!Win32Native.SetWindowPos(
@@ -217,5 +250,25 @@ public sealed unsafe class Win32Window : INativeWindow
                     "RegisterClassExW failed.");
             }
         }
+    }
+
+    private static bool EnableDpiAwareness()
+    {
+        if (Win32Native.SetProcessDpiAwarenessContext(
+                Win32Native.DpiAwarenessContextPerMonitorAwareV2))
+        {
+            return true;
+        }
+
+        int error = Marshal.GetLastPInvokeError();
+        const int accessDenied = 5;
+        if (error == accessDenied)
+        {
+            return false;
+        }
+
+        throw new Win32Exception(
+            error,
+            "SetProcessDpiAwarenessContext(PER_MONITOR_AWARE_V2) failed.");
     }
 }

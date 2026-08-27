@@ -24,13 +24,32 @@ if (duration is not null)
         System.Globalization.CultureInfo.InvariantCulture);
 }
 
+float? scaleOverride = null;
+string? scaleArgument = args.FirstOrDefault(argument =>
+    argument.StartsWith("--ui-scale=", StringComparison.Ordinal));
+if (scaleArgument is not null)
+{
+    scaleOverride = float.Parse(
+        scaleArgument["--ui-scale=".Length..],
+        System.Globalization.CultureInfo.InvariantCulture);
+    ArgumentOutOfRangeException.ThrowIfNegativeOrZero(scaleOverride.Value);
+}
+
 using LoginCard component = new();
 AppTheme theme = new();
 using Win32Window window = Win32Window.Create(
     "ZEngine Native UiLab",
     960,
     640,
-    visible: true);
+    visible: false);
+if (scaleOverride is { } syntheticScale)
+{
+    window.ResizeClient(
+        checked((uint)MathF.Round(960 * syntheticScale)),
+        checked((uint)MathF.Round(640 * syntheticScale)));
+}
+
+window.Show();
 using VulkanLoader loader = VulkanLoader.OpenSystem();
 using VulkanInstance instance = VulkanInstance.Create(
     loader,
@@ -44,17 +63,12 @@ using VulkanSurface surface = instance.CreateWin32Surface(
 using VulkanDevice device = instance.CreateGraphicsDevice(
     physicalDevice,
     enableSwapchain: true);
-WindowSize size = window.ClientSize;
-UiTree tree = component.Render(theme);
-UiLayout layout = new UiLayoutEngine().Layout(
-    tree,
-    size.Width,
-    size.Height);
-IReadOnlyList<UiPaintCommand> paint =
-    new UiPaintCompiler().Compile(tree, layout);
 VulkanUiScene scene = new();
 using GdiGlyphRasterizer glyphRasterizer = new();
-scene.Update(paint, glyphRasterizer);
+UiScaleContext currentScale = default;
+UiLayout? currentLayout = null;
+int paintCount = 0;
+UpdateUi(force: true);
 VulkanUiOverlayFactory overlayFactory = new(
     scene,
     ReadShader("ui.vert.spv"),
@@ -67,12 +81,14 @@ using VulkanWindowRenderer renderer = new(
     ReadShader("triangle.frag.spv"),
     overlayFactory: overlayFactory,
     captureFactory: new VulkanFrameCaptureFactory());
+UiRenderTelemetry initialTelemetry = scene.Telemetry;
 Console.WriteLine(
-    $"Native UiLab: nodes={layout.Bounds.Count}, paint={paint.Count}, quads={scene.Quads.Count}.");
+    $"Native UiLab: logical={currentScale.LogicalWidth:0.#}x{currentScale.LogicalHeight:0.#}, physical={currentScale.PhysicalWidth}x{currentScale.PhysicalHeight}, dpi={currentScale.DpiX}, scale={currentScale.ScaleX:0.##}, nodes={currentLayout!.Bounds.Count}, paint={paintCount}, instances={initialTelemetry.InstanceCount}, draws={initialTelemetry.DrawCount}, glyphHits={initialTelemetry.GlyphCacheHits}, glyphMisses={initialTelemetry.GlyphCacheMisses}, compileMs={initialTelemetry.SceneCompileMilliseconds:0.###}.");
 
 DateTime deadline = DateTime.UtcNow.AddSeconds(seconds);
 while (DateTime.UtcNow < deadline && window.PumpEvents())
 {
+    UpdateUi(force: false);
     WindowSize current = window.ClientSize;
     renderer.RenderFrame(
         current.Width,
@@ -110,6 +126,43 @@ if (errors.Length > 0)
 
 Console.WriteLine("Native UiLab validation reported no errors.");
 return 0;
+
+void UpdateUi(bool force)
+{
+    WindowSize physical = window.ClientSize;
+    if (physical.Width == 0 || physical.Height == 0)
+    {
+        return;
+    }
+
+    WindowDpi dpi = window.Dpi;
+    UiScaleContext next = scaleOverride is { } requestedScale
+        ? UiScaleContext.FromScale(
+            physical.Width,
+            physical.Height,
+            requestedScale)
+        : UiScaleContext.FromDpi(
+            physical.Width,
+            physical.Height,
+            dpi.X,
+            dpi.Y);
+    if (!force && next == currentScale)
+    {
+        return;
+    }
+
+    UiTree tree = component.Render(theme);
+    UiLayout layout = new UiLayoutEngine().Layout(
+        tree,
+        next.LogicalWidth,
+        next.LogicalHeight);
+    IReadOnlyList<UiPaintCommand> paint =
+        new UiPaintCompiler().Compile(tree, layout, next);
+    scene.Update(paint, glyphRasterizer);
+    currentScale = next;
+    currentLayout = layout;
+    paintCount = paint.Count;
+}
 
 static byte[] ReadShader(string name) =>
     File.ReadAllBytes(
