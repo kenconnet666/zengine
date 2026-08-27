@@ -53,7 +53,8 @@ try {
         throw "Git bundle creation failed with exit code $LASTEXITCODE."
     }
 
-    $bundleVerification = @(& git bundle verify $bundlePath 2>&1)
+    $bundleVerification = @(& git bundle verify $bundlePath 2>&1) |
+        ForEach-Object { $_.ToString() }
     if ($LASTEXITCODE -ne 0) {
         throw "Git bundle verification failed:`n$($bundleVerification -join [Environment]::NewLine)"
     }
