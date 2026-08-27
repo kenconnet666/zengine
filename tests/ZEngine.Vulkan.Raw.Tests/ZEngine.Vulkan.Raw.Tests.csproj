@@ -15,4 +15,9 @@
     <ProjectReference Include="..\..\src\Native\ZEngine.Platform.Win32\ZEngine.Platform.Win32.csproj" />
     <ProjectReference Include="..\..\src\Native\ZEngine.Vulkan.Raw\ZEngine.Vulkan.Raw.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Shared\VulkanTestDevice.cs"
+             Link="Testing\VulkanTestDevice.cs" />
+  </ItemGroup>
 </Project>

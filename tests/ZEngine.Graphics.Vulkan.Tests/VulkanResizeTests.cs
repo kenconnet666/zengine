@@ -1,6 +1,7 @@
 using ZEngine.Graphics.Vulkan;
 using ZEngine.Platform;
 using ZEngine.Platform.Win32;
+using ZEngine.Testing;
 using ZEngine.Vulkan.Raw;
 using Xunit;
 
@@ -25,11 +26,12 @@ public sealed class VulkanResizeTests
         using VulkanInstance instance = VulkanInstance.Create(
             loader,
             VulkanInstanceOptions.Win32Surface);
-        VulkanPhysicalDeviceInfo physicalDevice =
-            Assert.Single(instance.EnumeratePhysicalDevices());
         using VulkanSurface surface = instance.CreateWin32Surface(
             window.NativeInstance,
             window.NativeHandle);
+        VulkanPhysicalDeviceInfo physicalDevice = VulkanTestDevice.Select(
+            instance,
+            surface.SupportsPresentation);
         using VulkanDevice device = instance.CreateGraphicsDevice(
             physicalDevice,
             enableSwapchain: true);

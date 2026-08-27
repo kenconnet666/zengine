@@ -17,6 +17,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\Shared\VulkanTestDevice.cs"
+             Link="Testing\VulkanTestDevice.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="..\..\shaders\compiled\triangle.vert.spv"
              Link="Shaders\triangle.vert.spv"
              CopyToOutputDirectory="PreserveNewest" />

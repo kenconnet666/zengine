@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using ZEngine.Graphics.Vulkan;
+using ZEngine.Testing;
 using ZEngine.Vulkan.Raw;
 using Xunit;
 
@@ -19,8 +20,7 @@ public sealed class VulkanAllocatorTests
         using VulkanInstance instance = VulkanInstance.Create(
             loader,
             VulkanInstanceOptions.Validation);
-        VulkanPhysicalDeviceInfo physicalDevice =
-            Assert.Single(instance.EnumeratePhysicalDevices());
+        VulkanPhysicalDeviceInfo physicalDevice = VulkanTestDevice.Select(instance);
         using VulkanDevice device = instance.CreateGraphicsDevice(physicalDevice);
         using VulkanGpuAllocator allocator = new(
             device,

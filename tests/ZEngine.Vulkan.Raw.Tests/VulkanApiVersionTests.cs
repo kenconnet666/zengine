@@ -1,6 +1,7 @@
 namespace ZEngine.Vulkan.Raw.Tests;
 
 using ZEngine.Platform.Win32;
+using ZEngine.Testing;
 using ZEngine.Vulkan.Raw.Generated;
 using Xunit;
 
@@ -52,10 +53,9 @@ public sealed class VulkanApiVersionTests
         using VulkanLoader loader = VulkanLoader.OpenSystem();
         using VulkanInstance instance = VulkanInstance.Create(loader);
 
-        IReadOnlyList<VulkanPhysicalDeviceInfo> devices =
-            instance.EnumeratePhysicalDevices();
-
-        VulkanPhysicalDeviceInfo selected = Assert.Single(devices);
+        VulkanPhysicalDeviceInfo selected = VulkanTestDevice.Select(
+            instance,
+            device => device.Extensions.Contains("VK_KHR_swapchain"));
         Assert.False(string.IsNullOrWhiteSpace(selected.Name));
         Assert.True(selected.ApiVersion.Major >= 1);
         Assert.True(selected.Extensions.Contains("VK_KHR_swapchain"));
@@ -104,11 +104,12 @@ public sealed class VulkanApiVersionTests
         using VulkanInstance instance = VulkanInstance.Create(
             loader,
             VulkanInstanceOptions.Win32Surface);
-        VulkanPhysicalDeviceInfo physicalDevice =
-            Assert.Single(instance.EnumeratePhysicalDevices());
         using VulkanSurface surface = instance.CreateWin32Surface(
             window.NativeInstance,
             window.NativeHandle);
+        VulkanPhysicalDeviceInfo physicalDevice = VulkanTestDevice.Select(
+            instance,
+            surface.SupportsPresentation);
 
         Assert.True(surface.SupportsPresentation(physicalDevice));
 
@@ -146,8 +147,7 @@ public sealed class VulkanApiVersionTests
         using VulkanInstance instance = VulkanInstance.Create(
             loader,
             VulkanInstanceOptions.Validation);
-        VulkanPhysicalDeviceInfo physicalDevice =
-            Assert.Single(instance.EnumeratePhysicalDevices());
+        VulkanPhysicalDeviceInfo physicalDevice = VulkanTestDevice.Select(instance);
         using VulkanDevice device = instance.CreateGraphicsDevice(physicalDevice);
         using VulkanTimeline timeline = device.CreateTimeline();
 

@@ -27,7 +27,6 @@ if (duration is not null)
 }
 
 EditorConsole console = new();
-console.Write(EditorLogLevel.Information, "Vulkan", "Radeon RX 9070 GRE · Vulkan 1.4");
 console.Write(EditorLogLevel.Information, "Assets", "3 content revisions are resident");
 console.Write(EditorLogLevel.Warning, "Play", "Crash isolation is active");
 EditorContext context = new(console)
@@ -94,6 +93,11 @@ using VulkanSurface surface = instance.CreateWin32Surface(
 using VulkanDevice device = instance.CreateGraphicsDevice(
     physicalDevice,
     enableSwapchain: true);
+console.Write(
+    EditorLogLevel.Information,
+    "Vulkan",
+    $"{physicalDevice.Name} · Vulkan {physicalDevice.ApiVersion} · "
+    + device.Capabilities.DescriptorBindingModel);
 WindowSize size = window.ClientSize;
 UiTree tree = component.Render(theme);
 UiLayout layout = new UiLayoutEngine().Layout(tree, size.Width, size.Height);
