@@ -120,16 +120,8 @@ public sealed class PluginRuntimeTests
 
     private static PluginPackage CounterPackage()
     {
-        string repositoryRoot = Path.GetFullPath(
-            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
-        string sourceDirectory = Path.Combine(
-            repositoryRoot,
-            "tests",
-            "Fixtures",
-            "ZEngine.CounterPlugin.Runtime",
-            "bin",
-            "Debug",
-            "net11.0");
+        string sourceDirectory = TestBuildPaths.FixtureOutput(
+            "ZEngine.CounterPlugin.Runtime");
         PluginManifest manifest = new(
             "zengine.tests.counter",
             "1.0.0",

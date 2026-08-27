@@ -97,16 +97,8 @@ public sealed class PluginSetRuntimeTests
 
     private static PluginPackage[] ChainPackages()
     {
-        string repositoryRoot = Path.GetFullPath(
-            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
-        string source = Path.Combine(
-            repositoryRoot,
-            "tests",
-            "Fixtures",
-            "ZEngine.ChainPlugin.Runtime",
-            "bin",
-            "Debug",
-            "net11.0");
+        string source = TestBuildPaths.FixtureOutput(
+            "ZEngine.ChainPlugin.Runtime");
         return
         [
             Package<IChainA>("A", "PluginA", source),
