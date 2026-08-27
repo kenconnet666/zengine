@@ -31,6 +31,7 @@ dotnet publish samples/ZGame.Slice/ZGame.Slice.csproj -c Release -r win-x64 --se
 ## Documents
 
 - Architecture and accepted decisions: `docs/architecture/zengine-unified-csharp-ui-blazor-vulkan-blueprint.md`
+- New-machine continuation and verified bundle workflow: `docs/handoff/README.md`
 - Per-stage implementation evidence: `docs/development/p0-native-core-status.md` through `docs/development/p7-game-slice-status.md`
 - Rejected browser-first predecessor: `docs/archive/rejected/2026-08-26-zui-webgpu-fullstack-blueprint-rejected.md`
 
