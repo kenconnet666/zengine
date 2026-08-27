@@ -49,7 +49,7 @@ try {
     }
 
     Invoke-Checked -Description 'Git object verification' -Command {
-        git fsck --full
+        git fsck --full --no-dangling
     }
     Invoke-Checked -Description 'NuGet restore' -Command {
         dotnet restore $solution
